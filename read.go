@@ -18,12 +18,8 @@ func (spec *readSpec) String() string {
 		spec.FieldType.Name, spec.FieldValue.Interface(), spec.Length, spec.Repeat)
 }
 
-func (spec *readSpec) GetFieldName() string {
-	return spec.FieldType.Name
-}
-
 func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error){
-	var values reflect.Value 
+	var values, value reflect.Value 
 	var spec readSpec
 	var tag reflect.StructTag
 	var length, repeat string
@@ -32,8 +28,9 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error){
 	readSpecs = make([]readSpec, values.NumField())
 
 	for i := 0; i < values.NumField(); i++ {
-		spec = readSpecs[i]
-		spec.FieldValue = values.Field(i)
+		spec = readSpec{}
+		value = values.Field(i)
+		spec.FieldValue = value
 		spec.FieldType = values.Type().Field(i)
 		tag = spec.FieldType.Tag
 		length = tag.Get("length")
@@ -54,7 +51,7 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error){
 				return nil, err
 			}
 		}
-		fmt.Printf(spec.String())
+		readSpecs[i] = spec
 	}
 	return readSpecs, nil
 }
