@@ -7,7 +7,7 @@ import (
 )
 
 type readSpec struct {
-	Field reflect.Value
+	FieldValue reflect.Value
 	FieldType reflect.StructField
 	Length int
 	Repeat int
@@ -15,7 +15,11 @@ type readSpec struct {
 
 func (spec *readSpec) String() string {
 	return fmt.Sprintf("Field Name: %s,\t Field Value: %v,\t Field Length: %d\n, repeat %d\n",
-		spec.FieldType.Name, spec.Field.Interface(), spec.Length, spec.Repeat)
+		spec.FieldType.Name, spec.FieldValue.Interface(), spec.Length, spec.Repeat)
+}
+
+func (spec *readSpec) GetFieldName() string {
+	return spec.FieldType.Name
 }
 
 func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error){
@@ -29,7 +33,7 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error){
 
 	for i := 0; i < values.NumField(); i++ {
 		spec = readSpecs[i]
-		spec.Field = values.Field(i)
+		spec.FieldValue = values.Field(i)
 		spec.FieldType = values.Type().Field(i)
 		tag = spec.FieldType.Tag
 		length = tag.Get("length")
@@ -50,6 +54,7 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error){
 				return nil, err
 			}
 		}
+		fmt.Printf(spec.String())
 	}
 	return readSpecs, nil
 }

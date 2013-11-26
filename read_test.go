@@ -22,5 +22,6 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	result, err := buildReadSpecs(target)
 	c.Assert(err, IsNil)
 	c.Assert(result, HasLen, 3)
-	c.Assert(result[0].FieldType, Equals, string)
+	spec := result[0]
+	c.Assert(spec.GetFieldName(), Equals, "Forename")
 }
