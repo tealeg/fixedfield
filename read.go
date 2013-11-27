@@ -1,6 +1,8 @@
 package fixedfield
 
 import (
+	"encoding/binary"
+	"bytes"
 	"fmt"
 	"io"
 	"reflect"
@@ -70,7 +72,39 @@ func populateStructFromReadSpecAndBytes(target interface{}, readSpecs []readSpec
 		switch spec.FieldValue.Kind() {
 		case reflect.String:
 			spec.FieldValue.SetString(string(block))
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			var value int64
+			buffer := bytes.NewBuffer(block)
+			binary.Read(buffer, binary.BigEndian, value)
+			spec.FieldValue.SetInt(value)
 		}
+        // Invalid Kind = iota
+        // Bool
+        // Int
+        // Int8
+        // Int16
+        // Int32
+        // Int64
+        // Uint
+        // Uint8
+        // Uint16
+        // Uint32
+        // Uint64
+        // Uintptr
+        // Float32
+        // Float64
+        // Complex64
+        // Complex128
+        // Array
+        // Chan
+        // Func
+        // Interface
+        // Map
+        // Ptr
+        // Slice
+
+        // Struct
+        // UnsafePointer
 	}
 	return nil
 }
