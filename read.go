@@ -2,6 +2,7 @@ package fixedfield
 
 import (
 	"fmt"
+	"io"
 	"reflect"
 	"strconv"
 )
@@ -56,3 +57,20 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error){
 	return readSpecs, nil
 }
 
+func populateStructFromReadSpecAndBytes(target interface{}, readSpecs []readSpec, data io.Reader) error {
+	for _, spec := range readSpecs {
+		block := make([]byte, spec.Length)
+		n, err := data.Read(block)
+		if err != nil {
+			return err
+		}
+		if n != spec.Length {
+			return fmt.Errorf("Buffer underrun, %d of %d bytes read.", n, spec.Length)
+		}
+		switch spec.FieldValue.Kind() {
+		case reflect.String:
+			spec.FieldValue.SetString(string(block))
+		}
+	}
+	return nil
+}
