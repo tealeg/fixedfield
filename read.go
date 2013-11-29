@@ -58,7 +58,8 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error){
 			}
 		}
 		switch value.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint,
+			reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 			if len(encoding) == 0 {
 				spec.Encoding = "LE"
 			} else {
@@ -97,6 +98,33 @@ func readBinaryInteger(block []byte, blockLength int, byteOrder binary.ByteOrder
 	return value, err
 }
 
+func readBinaryUnsignedInteger(block []byte, blockLength int, byteOrder binary.ByteOrder) (value uint64, err error) {
+	buffer := bytes.NewBuffer(block)
+	switch blockLength {
+	case 1:
+		var val uint8
+		err = binary.Read(buffer, byteOrder, &val)
+		if err == nil {
+			value = uint64(val)
+		}
+	case 2:
+		var val uint16
+		err = binary.Read(buffer, byteOrder, &val)
+		if err == nil {
+			value = uint64(val)
+		}
+	case 4:
+		var val uint32
+		err = binary.Read(buffer, byteOrder, &val)
+		if err == nil {
+			value = uint64(val)
+		}
+	case 8:
+		err = binary.Read(buffer, byteOrder, &value)
+	}
+	return value, err
+}
+
 
 func readInteger(spec readSpec, block []byte, blockLength int) (err error) {
 	var intVal int
@@ -119,6 +147,27 @@ func readInteger(spec readSpec, block []byte, blockLength int) (err error) {
 	return err
 }
 
+func readUnsignedInteger(spec readSpec, block []byte, blockLength int) (err error) {
+	var intVal int
+	var value uint64
+	switch strings.ToLower(spec.Encoding) {
+	case "ascii":
+		intVal, err = strconv.Atoi(string(block))
+		if err == nil {
+			value = uint64(intVal)
+		}
+	case "bigendian", "be":
+		value, err = readBinaryUnsignedInteger(block, blockLength, binary.BigEndian)
+	case "litteendian", "le":
+		value, err = readBinaryUnsignedInteger(block, blockLength, binary.LittleEndian)
+	}
+	if err == nil {
+		spec.FieldValue.SetUint(value)
+		return nil
+	}
+	return err
+}
+
 func populateStructFromReadSpecAndBytes(target interface{}, readSpecs []readSpec, data io.Reader) (err error) {
 	for _, spec := range readSpecs {
 		var bytesRead int
@@ -135,6 +184,8 @@ func populateStructFromReadSpecAndBytes(target interface{}, readSpecs []readSpec
 			spec.FieldValue.SetString(string(block))
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			err = readInteger(spec, block, bytesRead)
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			err = readUnsignedInteger(spec, block, bytesRead)
 		}
 		if err != nil {
 			return err
