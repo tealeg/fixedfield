@@ -70,51 +70,53 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error){
 	return readSpecs, nil
 }
 
+func readBinaryInteger(block []byte, blockLength int, byteOrder binary.ByteOrder) (value int64, err error) {
+	buffer := bytes.NewBuffer(block)
+	switch blockLength {
+	case 1:
+		var val int8
+		err = binary.Read(buffer, byteOrder, &val)
+		if err == nil {
+			value = int64(val)
+		}
+	case 2:
+		var val int16
+		err = binary.Read(buffer, byteOrder, &val)
+		if err == nil {
+			value = int64(val)
+		}
+	case 4:
+		var val int32
+		err = binary.Read(buffer, byteOrder, &val)
+		if err == nil {
+			value = int64(val)
+		}
+	case 8:
+		err = binary.Read(buffer, byteOrder, &value)
+	}
+	return value, err
+}
+
+
 func readInteger(spec readSpec, block []byte, blockLength int) (err error) {
 	var intVal int
 	var value int64
 	switch strings.ToLower(spec.Encoding) {
 	case "ascii":
 		intVal, err = strconv.Atoi(string(block))
-		if err != nil {
-			return err
+		if err == nil {
+			value = int64(intVal)
 		}
-		value = int64(intVal)
-	case "bigendian":
-		buffer := bytes.NewBuffer(block)
-		switch blockLength {
-		case 1:
-			var val int8
-			err = binary.Read(buffer, binary.BigEndian, &val)
-			if err != nil {
-				return err
-			}
-			value = int64(val)
-		case 2:
-			var val int16
-			err = binary.Read(buffer, binary.BigEndian, &val)
-			if err != nil {
-				return err
-			}
-			value = int64(val)
-		case 4:
-			var val int32
-			err = binary.Read(buffer, binary.BigEndian, &val)
-			if err != nil {
-				return err
-			}
-			value = int64(val)
-		case 8:
-			var val int64
-			err = binary.Read(buffer, binary.BigEndian, &val)
-			if err != nil {
-				return err
-			}
-			value = int64(val)
-		}
+	case "bigendian", "be":
+		value, err = readBinaryInteger(block, blockLength, binary.BigEndian)
+	case "litteendian", "le":
+		value, err = readBinaryInteger(block, blockLength, binary.LittleEndian)
 	}
-	spec.FieldValue.SetInt(value)
-	return nil
+	if err == nil {
+		spec.FieldValue.SetInt(value)
+		return nil
+	}
+	return err
 }
 
 func populateStructFromReadSpecAndBytes(target interface{}, readSpecs []readSpec, data io.Reader) (err error) {
