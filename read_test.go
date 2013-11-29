@@ -14,7 +14,7 @@ var _ = Suite(&ReadSuite{})
 
 type Target struct {
 	Name string `length:"5"`
-	Age int `length:"2"`
+	Age int `length:"2" encoding:"ascii"`
 	Ratings []int `length:"1" repeat:"10"`
 }
 
@@ -33,6 +33,7 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	c.Assert(spec.FieldType.Name, Equals, "Age")
 	c.Assert(spec.Length, Equals, 2)
 	c.Assert(spec.Repeat, Equals, 1)
+	c.Assert(spec.Encoding, Equals, "ascii")
 	spec = result[2]
 	c.Assert(spec.FieldType.Name, Equals, "Ratings")
 	c.Assert(spec.Length, Equals, 1)

@@ -7,6 +7,7 @@ import (
 	"io"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 type readSpec struct {
@@ -14,6 +15,7 @@ type readSpec struct {
 	FieldType reflect.StructField
 	Length int
 	Repeat int
+	Encoding string
 }
 
 func (spec *readSpec) String() string {
@@ -25,7 +27,7 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error){
 	var values, value reflect.Value 
 	var spec readSpec
 	var tag reflect.StructTag
-	var length, repeat string
+	var length, repeat, encoding string
 
 	values = reflect.ValueOf(structure).Elem()
 	readSpecs = make([]readSpec, values.NumField())
@@ -38,6 +40,7 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error){
 		tag = spec.FieldType.Tag
 		length = tag.Get("length")
 		repeat = tag.Get("repeat")
+		encoding = tag.Get("encoding")
 		if len(length) == 0 {
 			spec.Length = 0
 		} else {
@@ -54,28 +57,47 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error){
 				return nil, err
 			}
 		}
+		switch value.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			if len(encoding) == 0 {
+				spec.Encoding = "LE"
+			} else {
+				spec.Encoding = encoding
+			}
+		}
 		readSpecs[i] = spec
 	}
 	return readSpecs, nil
 }
 
-func populateStructFromReadSpecAndBytes(target interface{}, readSpecs []readSpec, data io.Reader) error {
+func populateStructFromReadSpecAndBytes(target interface{}, readSpecs []readSpec, data io.Reader) (err error) {
 	for _, spec := range readSpecs {
+		var bytesRead int
 		block := make([]byte, spec.Length)
-		n, err := data.Read(block)
+		bytesRead, err = data.Read(block)
 		if err != nil {
 			return err
 		}
-		if n != spec.Length {
-			return fmt.Errorf("Buffer underrun, %d of %d bytes read.", n, spec.Length)
+		if bytesRead != spec.Length {
+			return fmt.Errorf("Buffer underrun, %d of %d bytes read.", bytesRead, spec.Length)
 		}
 		switch spec.FieldValue.Kind() {
 		case reflect.String:
 			spec.FieldValue.SetString(string(block))
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			var intVal int
 			var value int64
-			buffer := bytes.NewBuffer(block)
-			binary.Read(buffer, binary.BigEndian, value)
+			switch strings.ToLower(spec.Encoding) {
+			case "ascii":
+				intVal, err = strconv.Atoi(string(block))
+				if err != nil {
+					return err
+				}
+				value = int64(intVal)
+			case "bigendian":
+				buffer := bytes.NewBuffer(block)
+				binary.Read(buffer, binary.BigEndian, value)
+			}
 			spec.FieldValue.SetInt(value)
 		}
         // Invalid Kind = iota
