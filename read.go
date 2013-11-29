@@ -70,7 +70,7 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error){
 	return readSpecs, nil
 }
 
-func readInteger(spec readSpec, block []byte) (err error) {
+func readInteger(spec readSpec, block []byte, blockLength int) (err error) {
 	var intVal int
 	var value int64
 	switch strings.ToLower(spec.Encoding) {
@@ -82,7 +82,36 @@ func readInteger(spec readSpec, block []byte) (err error) {
 		value = int64(intVal)
 	case "bigendian":
 		buffer := bytes.NewBuffer(block)
-		binary.Read(buffer, binary.BigEndian, value)
+		switch blockLength {
+		case 1:
+			var val int8
+			err = binary.Read(buffer, binary.BigEndian, &val)
+			if err != nil {
+				return err
+			}
+			value = int64(val)
+		case 2:
+			var val int16
+			err = binary.Read(buffer, binary.BigEndian, &val)
+			if err != nil {
+				return err
+			}
+			value = int64(val)
+		case 4:
+			var val int32
+			err = binary.Read(buffer, binary.BigEndian, &val)
+			if err != nil {
+				return err
+			}
+			value = int64(val)
+		case 8:
+			var val int64
+			err = binary.Read(buffer, binary.BigEndian, &val)
+			if err != nil {
+				return err
+			}
+			value = int64(val)
+		}
 	}
 	spec.FieldValue.SetInt(value)
 	return nil
@@ -103,7 +132,7 @@ func populateStructFromReadSpecAndBytes(target interface{}, readSpecs []readSpec
 		case reflect.String:
 			spec.FieldValue.SetString(string(block))
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			err = readInteger(spec, block)
+			err = readInteger(spec, block, bytesRead)
 		}
 		if err != nil {
 			return err
