@@ -70,6 +70,24 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error){
 	return readSpecs, nil
 }
 
+func readInteger(spec readSpec, block []byte) (err error) {
+	var intVal int
+	var value int64
+	switch strings.ToLower(spec.Encoding) {
+	case "ascii":
+		intVal, err = strconv.Atoi(string(block))
+		if err != nil {
+			return err
+		}
+		value = int64(intVal)
+	case "bigendian":
+		buffer := bytes.NewBuffer(block)
+		binary.Read(buffer, binary.BigEndian, value)
+	}
+	spec.FieldValue.SetInt(value)
+	return nil
+}
+
 func populateStructFromReadSpecAndBytes(target interface{}, readSpecs []readSpec, data io.Reader) (err error) {
 	for _, spec := range readSpecs {
 		var bytesRead int
@@ -85,20 +103,10 @@ func populateStructFromReadSpecAndBytes(target interface{}, readSpecs []readSpec
 		case reflect.String:
 			spec.FieldValue.SetString(string(block))
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			var intVal int
-			var value int64
-			switch strings.ToLower(spec.Encoding) {
-			case "ascii":
-				intVal, err = strconv.Atoi(string(block))
-				if err != nil {
-					return err
-				}
-				value = int64(intVal)
-			case "bigendian":
-				buffer := bytes.NewBuffer(block)
-				binary.Read(buffer, binary.BigEndian, value)
-			}
-			spec.FieldValue.SetInt(value)
+			err = readInteger(spec, block)
+		}
+		if err != nil {
+			return err
 		}
         // Invalid Kind = iota
         // Bool
