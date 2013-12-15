@@ -1,8 +1,8 @@
 package fixedfield
 
 import (
-	"encoding/binary"
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"reflect"
@@ -12,10 +12,10 @@ import (
 
 type readSpec struct {
 	FieldValue reflect.Value
-	FieldType reflect.StructField
-	Length int
-	Repeat int
-	Encoding string
+	FieldType  reflect.StructField
+	Length     int
+	Repeat     int
+	Encoding   string
 }
 
 func (spec *readSpec) String() string {
@@ -23,8 +23,8 @@ func (spec *readSpec) String() string {
 		spec.FieldType.Name, spec.FieldValue.Interface(), spec.Length, spec.Repeat)
 }
 
-func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error){
-	var values, value reflect.Value 
+func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error) {
+	var values, value reflect.Value
 	var spec readSpec
 	var tag reflect.StructTag
 	var length, repeat, encoding string
@@ -60,6 +60,12 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error){
 		switch value.Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint,
 			reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			if len(encoding) == 0 {
+				spec.Encoding = "LE"
+			} else {
+				spec.Encoding = encoding
+			}
+		case reflect.Float64, reflect.Float32:
 			if len(encoding) == 0 {
 				spec.Encoding = "LE"
 			} else {
@@ -125,16 +131,21 @@ func readBinaryUnsignedInteger(block []byte, blockLength int, byteOrder binary.B
 	return value, err
 }
 
+func readASCIIInteger(block []byte) (value int64, err error) {
+	var intVal int
+	intVal, err = strconv.Atoi(string(block))
+	if err != nil {
+		return
+	}
+	value = int64(intVal)
+	return
+}
 
 func readInteger(spec readSpec, block []byte, blockLength int) (err error) {
-	var intVal int
 	var value int64
 	switch strings.ToLower(spec.Encoding) {
 	case "ascii":
-		intVal, err = strconv.Atoi(string(block))
-		if err == nil {
-			value = int64(intVal)
-		}
+		value, err = readASCIIInteger(block)
 	case "bigendian", "be":
 		value, err = readBinaryInteger(block, blockLength, binary.BigEndian)
 	case "litteendian", "le":
@@ -168,6 +179,22 @@ func readUnsignedInteger(spec readSpec, block []byte, blockLength int) (err erro
 	return err
 }
 
+func readFloat(spec readSpec, block []byte, bytesRead int, kind reflect.Kind) (err error) {
+	var f64Val float64
+	switch strings.ToLower(spec.Encoding) {
+	case "ascii":
+		if kind == reflect.Float32 {
+			f64Val, err = strconv.ParseFloat(string(block), 32)
+		} else {
+			f64Val, err = strconv.ParseFloat(string(block), 64)
+		}
+	}
+	if err == nil {
+		spec.FieldValue.SetFloat(f64Val)
+	}
+	return err
+}
+
 func populateStructFromReadSpecAndBytes(target interface{}, readSpecs []readSpec, data io.Reader) (err error) {
 	for _, spec := range readSpecs {
 		var bytesRead int
@@ -179,44 +206,36 @@ func populateStructFromReadSpecAndBytes(target interface{}, readSpecs []readSpec
 		if bytesRead != spec.Length {
 			return fmt.Errorf("Buffer underrun, %d of %d bytes read.", bytesRead, spec.Length)
 		}
-		switch spec.FieldValue.Kind() {
+		kind := spec.FieldValue.Kind()
+		switch kind {
 		case reflect.String:
 			spec.FieldValue.SetString(string(block))
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			err = readInteger(spec, block, bytesRead)
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 			err = readUnsignedInteger(spec, block, bytesRead)
+		case reflect.Float64, reflect.Float32:
+			err = readFloat(spec, block, bytesRead, kind)
 		}
+
 		if err != nil {
 			return err
 		}
-        // Invalid Kind = iota
-        // Bool
-        // Int
-        // Int8
-        // Int16
-        // Int32
-        // Int64
-        // Uint
-        // Uint8
-        // Uint16
-        // Uint32
-        // Uint64
-        // Uintptr
-        // Float32
-        // Float64
-        // Complex64
-        // Complex128
-        // Array
-        // Chan
-        // Func
-        // Interface
-        // Map
-        // Ptr
-        // Slice
+		// Invalid Kind = iota
+		// Bool
+		// Uintptr
+		// Complex64
+		// Complex128
+		// Array
+		// Chan
+		// Func
+		// Interface
+		// Map
+		// Ptr
+		// Slice
 
-        // Struct
-        // UnsafePointer
+		// Struct
+		// UnsafePointer
 	}
 	return nil
 }

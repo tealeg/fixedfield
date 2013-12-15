@@ -2,23 +2,24 @@ package fixedfield
 
 import (
 	"bytes"
-	"testing"
 	. "launchpad.net/gocheck"
+	"testing"
 )
 
-func Test(t *testing.T) {TestingT(t)}
+func Test(t *testing.T) { TestingT(t) }
 
-type ReadSuite struct {}
+type ReadSuite struct{}
 
 var _ = Suite(&ReadSuite{})
 
 type Target struct {
-	Name string `length:"5"`
-	Age int `length:"2" encoding:"ascii"`
-	ShoeSize int `length:"2" encoding:"bigendian"`
-	CollarSize int `length:"2" encoding:"le"`
-	ElbowBreadth uint `length:"8" encoding:"le"`
-	Ratings []int `length:"1" repeat:"10"`
+	Name         string  `length:"5"`
+	Age          int     `length:"2" encoding:"ascii"`
+	ShoeSize     int     `length:"2" encoding:"bigendian"`
+	CollarSize   int     `length:"2" encoding:"le"`
+	ElbowBreadth uint    `length:"8" encoding:"le"`
+	NoseCapacity float64 `length:"6" encoding:"ascii"`
+	Ratings      []int   `length:"1" repeat:"10"`
 }
 
 // buildReadSpecs can read a struct and it's tags to build a valid
@@ -27,7 +28,7 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	target := &Target{}
 	result, err := buildReadSpecs(target)
 	c.Assert(err, IsNil)
-	c.Assert(result, HasLen, 6)
+	c.Assert(result, HasLen, 7)
 	spec := result[0]
 	c.Assert(spec.FieldType.Name, Equals, "Name")
 	c.Assert(spec.Length, Equals, 5)
@@ -53,16 +54,27 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	c.Assert(spec.Repeat, Equals, 1)
 	c.Assert(spec.Encoding, Equals, "le")
 	spec = result[5]
+	c.Assert(spec.FieldType.Name, Equals, "NoseCapacity")
+	c.Assert(spec.Length, Equals, 6)
+	c.Assert(spec.Repeat, Equals, 1)
+	c.Assert(spec.Encoding, Equals, "ascii")
+	spec = result[6]
 	c.Assert(spec.FieldType.Name, Equals, "Ratings")
 	c.Assert(spec.Length, Equals, 1)
 	c.Assert(spec.Repeat, Equals, 10)
 }
 
-
 // Test populateStructFromReadSpecAndBytes copies values from a
 // ReaderSeeker into the appropriate structural elements
 func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
-	data := bytes.NewBuffer([]byte("Geoff36\x00\x7f\x7f\x00\xff\xff\xff\xff\xff\xff\xff\xff0123456789"))
+	data := bytes.NewBuffer(
+		[]byte("Geoff" +
+			"36" +
+			"\x00\x7f" +
+			"\x7f\x00" +
+			"\xff\xff\xff\xff\xff\xff\xff\xff" +
+			"001.23" +
+			"0123456789"))
 	target := &Target{}
 	readSpec, err := buildReadSpecs(target)
 	c.Assert(err, IsNil)
@@ -73,4 +85,5 @@ func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
 	c.Assert(target.ShoeSize, Equals, 127)
 	c.Assert(target.CollarSize, Equals, 127)
 	c.Assert(target.ElbowBreadth, Equals, uint(18446744073709551615))
+	c.Assert(target.NoseCapacity, Equals, 1.23)
 }
