@@ -58,8 +58,9 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error) {
 			}
 		}
 		switch value.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint,
-			reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32,
+			reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16,
+			reflect.Uint32, reflect.Uint64:
 			if len(encoding) == 0 {
 				spec.Encoding = "LE"
 			} else {
@@ -179,6 +180,24 @@ func readUnsignedInteger(spec readSpec, block []byte, blockLength int) (err erro
 	return err
 }
 
+func readBinaryFloat(block []byte, blockLength int, byteOrder binary.ByteOrder) (value float64, err error) {
+	buffer := bytes.NewBuffer(block)
+	switch blockLength{ 
+	case 4:
+		var val float32
+		err = binary.Read(buffer, byteOrder, &val)
+		if err == nil {
+			value = float64(val)
+		}
+	case 8:
+		err = binary.Read(buffer, byteOrder, &value)
+	default:
+		err = fmt.Errorf("Binary floats must have a length of either 4 or 8 bytes (float32 or float64 respectively).")
+	}
+	return
+}
+
+
 func readFloat(spec readSpec, block []byte, bytesRead int, kind reflect.Kind) (err error) {
 	var f64Val float64
 	switch strings.ToLower(spec.Encoding) {
@@ -188,7 +207,14 @@ func readFloat(spec readSpec, block []byte, bytesRead int, kind reflect.Kind) (e
 		} else {
 			f64Val, err = strconv.ParseFloat(string(block), 64)
 		}
+	case "bigendian", "be":
+		f64Val, err = readBinaryFloat(block, bytesRead, binary.BigEndian)
+	case "litteendian", "le":
+		f64Val, err = readBinaryFloat(block, bytesRead, binary.LittleEndian)
+
 	}
+
+	
 	if err == nil {
 		spec.FieldValue.SetFloat(f64Val)
 	}
