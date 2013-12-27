@@ -2,8 +2,9 @@ package fixedfield
 
 import (
 	"bytes"
-	"math"
+	"encoding/binary"
 	. "launchpad.net/gocheck"
+	"math"
 	"testing"
 )
 
@@ -14,15 +15,15 @@ type ReadSuite struct{}
 var _ = Suite(&ReadSuite{})
 
 type Target struct {
-	Name         string  `length:"5"`
-	Age          int     `length:"2" encoding:"ascii"`
-	ShoeSize     int     `length:"2" encoding:"bigendian"`
-	CollarSize   int     `length:"2" encoding:"le"`
-	ElbowBreadth uint    `length:"8" encoding:"le"`
-	NoseCapacity float64 `length:"6" encoding:"ascii"`
-	Pi           float64 `length:"8" encoding:"le"`
+	Name           string  `length:"5"`
+	Age            int     `length:"2" encoding:"ascii"`
+	ShoeSize       int     `length:"2" encoding:"bigendian"`
+	CollarSize     int     `length:"2" encoding:"le"`
+	ElbowBreadth   uint    `length:"8" encoding:"le"`
+	NoseCapacity   float64 `length:"6" encoding:"ascii"`
+	Pi             float64 `length:"8" encoding:"le"`
 	UpsideDownCake float32 `length:"4" encoding:"be"`
-	Ratings      []int   `length:"1" repeat:"10"`
+	Ratings        []int   `length:"1" repeat:"10"`
 }
 
 // buildReadSpecs can read a struct and it's tags to build a valid
@@ -75,6 +76,15 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	c.Assert(spec.FieldType.Name, Equals, "Ratings")
 	c.Assert(spec.Length, Equals, 1)
 	c.Assert(spec.Repeat, Equals, 10)
+}
+
+func (s *ReadSuite) TestReadBinaryInteger8BitLittleEndian(c *C) {
+	block := []byte("\x10")
+	blockLength := 1
+	byteOrder := binary.LittleEndian
+	value, err := readBinaryInteger(block, blockLength, byteOrder)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, int64(16))
 }
 
 // Test populateStructFromReadSpecAndBytes copies values from a
