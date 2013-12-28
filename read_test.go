@@ -238,6 +238,86 @@ func (s *ReadSuite) TestReadBinaryInteger64BitBigEndianNegative(c *C) {
 	c.Assert(value, Equals, int64(-1152622432880619519))
 }
 
+// Test readBinaryUnsignedInteger decodes an 8bit, Little Endian value.
+func (s *ReadSuite) TestReadBinaryUnsignedInteger8BitLittleEndian(c *C) {
+	block := []byte("\x10")
+	blockLength := 1
+	byteOrder := binary.LittleEndian
+	value, err := readBinaryUnsignedInteger(block, blockLength, byteOrder)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, uint64(16))
+}
+
+// Test readBinaryUnsignedInteger decodes a 16bit, Little Endian value.
+func (s *ReadSuite) TestReadBinaryUnsignedInteger16BitLittleEndian(c *C) {
+	block := []byte("\x10\x01")
+	blockLength := 2
+	byteOrder := binary.LittleEndian
+	value, err := readBinaryUnsignedInteger(block, blockLength, byteOrder)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, uint64(272))
+}
+
+// Test readBinaryUnsignedInteger decodes a 32bit, Little Endian value.
+func (s *ReadSuite) TestReadBinaryUnsignedInteger32BitLittleEndian(c *C) {
+	block := []byte("\x10\x10\x01\x01")
+	blockLength := 4
+	byteOrder := binary.LittleEndian
+	value, err := readBinaryUnsignedInteger(block, blockLength, byteOrder)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, uint64(16846864))
+}
+
+// Test readBinaryUnsignedInteger decodes a 64bit, Little Endian value.
+func (s *ReadSuite) TestReadBinaryUnsignedInteger64BitLittleEndian(c *C) {
+	block := []byte("\x10\x01\x10\x01\x10\x01\x10\x01")
+	blockLength := 8
+	byteOrder := binary.LittleEndian
+	value, err := readBinaryUnsignedInteger(block, blockLength, byteOrder)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, uint64(76562361914229008))
+}
+
+// Test readBinaryUnsignedInteger decodes an 8bit, Big Endian value.
+func (s *ReadSuite) TestReadBinaryUnsignedInteger8BitBigEndian(c *C) {
+	block := []byte("\x10")
+	blockLength := 1
+	byteOrder := binary.BigEndian
+	value, err := readBinaryUnsignedInteger(block, blockLength, byteOrder)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, uint64(16))
+}
+
+// Test readBinaryUnsignedInteger decodes a 16bit, Big Endian value.
+func (s *ReadSuite) TestReadBinaryUnsignedInteger16BitBigEndian(c *C) {
+	block := []byte("\x10\x01")
+	blockLength := 2
+	byteOrder := binary.BigEndian
+	value, err := readBinaryUnsignedInteger(block, blockLength, byteOrder)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, uint64(4097))
+}
+
+// Test readBinaryUnsignedInteger decodes a 32bit, Big Endian value.
+func (s *ReadSuite) TestReadBinaryUnsignedInteger32BitBigEndian(c *C) {
+	block := []byte("\x10\x10\x01\x01")
+	blockLength := 4
+	byteOrder := binary.BigEndian
+	value, err := readBinaryUnsignedInteger(block, blockLength, byteOrder)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, uint64(269484289))
+}
+
+// Test readBinaryUnsignedInteger decodes a 64bit, Big Endian value.
+func (s *ReadSuite) TestReadBinaryUnsignedInteger64BitBigEndian(c *C) {
+	block := []byte("\x10\x01\x10\x01\x10\x01\x10\x01")
+	blockLength := 8
+	byteOrder := binary.BigEndian
+	value, err := readBinaryUnsignedInteger(block, blockLength, byteOrder)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, uint64(1153220576333074433))
+}
+
 // Test populateStructFromReadSpecAndBytes copies values from a
 // ReaderSeeker into the appropriate structural elements
 func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
