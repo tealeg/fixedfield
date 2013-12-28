@@ -23,6 +23,8 @@ func (spec *readSpec) String() string {
 		spec.FieldType.Name, spec.FieldValue.Interface(), spec.Length, spec.Repeat)
 }
 
+// Convert annotation on a structure into a specification for what
+// should be read from a fixed field file.
 func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error) {
 	var values, value reflect.Value
 	var spec readSpec
@@ -78,6 +80,8 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error) {
 	return readSpecs, nil
 }
 
+// Convert an array of bytes, of a known length and byte order, into
+// a signed 64 bit integer.
 func readBinaryInteger(block []byte, blockLength int, byteOrder binary.ByteOrder) (value int64, err error) {
 	buffer := bytes.NewBuffer(block)
 	switch blockLength {
@@ -105,6 +109,8 @@ func readBinaryInteger(block []byte, blockLength int, byteOrder binary.ByteOrder
 	return value, err
 }
 
+// Convert an array of bytes, of a known length and byte order, into
+// an unsigned 64 bit integer.
 func readBinaryUnsignedInteger(block []byte, blockLength int, byteOrder binary.ByteOrder) (value uint64, err error) {
 	buffer := bytes.NewBuffer(block)
 	switch blockLength {
@@ -134,7 +140,14 @@ func readBinaryUnsignedInteger(block []byte, blockLength int, byteOrder binary.B
 
 func readASCIIInteger(block []byte) (value int64, err error) {
 	var intVal int
-	intVal, err = strconv.Atoi(string(block))
+	var blockString string = string(block)
+	var multiple int = 1
+	if blockString[0] == '-' {
+		blockString = blockString[1:]
+		multiple = -1
+	}
+	intVal, err = strconv.Atoi(blockString)
+	intVal = intVal * multiple
 	if err != nil {
 		return
 	}
@@ -182,7 +195,7 @@ func readUnsignedInteger(spec readSpec, block []byte, blockLength int) (err erro
 
 func readBinaryFloat(block []byte, blockLength int, byteOrder binary.ByteOrder) (value float64, err error) {
 	buffer := bytes.NewBuffer(block)
-	switch blockLength{ 
+	switch blockLength {
 	case 4:
 		var val float32
 		err = binary.Read(buffer, byteOrder, &val)
@@ -196,7 +209,6 @@ func readBinaryFloat(block []byte, blockLength int, byteOrder binary.ByteOrder) 
 	}
 	return
 }
-
 
 func readFloat(spec readSpec, block []byte, bytesRead int, kind reflect.Kind) (err error) {
 	var f64Val float64
@@ -214,7 +226,6 @@ func readFloat(spec readSpec, block []byte, bytesRead int, kind reflect.Kind) (e
 
 	}
 
-	
 	if err == nil {
 		spec.FieldValue.SetFloat(f64Val)
 	}
