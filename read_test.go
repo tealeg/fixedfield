@@ -326,6 +326,14 @@ func (s *ReadSuite) TestReadASCIIIntegerPositive(c *C) {
 	c.Assert(value, Equals, int64(4096))
 }
 
+// Test readASCIIInteger with negative value
+func (s *ReadSuite) TestReadASCIIIntegerNegative(c *C) {
+	block := []byte("-4096")
+	value, err := readASCIIInteger(block)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, int64(-4096))
+}
+
 // Test populateStructFromReadSpecAndBytes copies values from a
 // ReaderSeeker into the appropriate structural elements
 func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
