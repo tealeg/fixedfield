@@ -78,6 +78,7 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	c.Assert(spec.Repeat, Equals, 10)
 }
 
+// Test readBinaryInteger decodes an 8bit, Little Endian value.
 func (s *ReadSuite) TestReadBinaryInteger8BitLittleEndian(c *C) {
 	block := []byte("\x10")
 	blockLength := 1
@@ -85,6 +86,76 @@ func (s *ReadSuite) TestReadBinaryInteger8BitLittleEndian(c *C) {
 	value, err := readBinaryInteger(block, blockLength, byteOrder)
 	c.Assert(err, IsNil)
 	c.Assert(value, Equals, int64(16))
+}
+
+// Test readBinaryInteger decodes an 16bit, Little Endian value.
+func (s *ReadSuite) TestReadBinaryInteger16BitLittleEndian(c *C) {
+	block := []byte("\x10\x01")
+	blockLength := 2
+	byteOrder := binary.LittleEndian
+	value, err := readBinaryInteger(block, blockLength, byteOrder)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, int64(272))
+}
+
+// Test readBinaryInteger decodes an 32bit, Little Endian value.
+func (s *ReadSuite) TestReadBinaryInteger32BitLittleEndian(c *C) {
+	block := []byte("\x10\x10\x01\x01")
+	blockLength := 4
+	byteOrder := binary.LittleEndian
+	value, err := readBinaryInteger(block, blockLength, byteOrder)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, int64(16846864))
+}
+
+// Test readBinaryInteger decodes an 64bit, Little Endian value.
+func (s *ReadSuite) TestReadBinaryInteger64BitLittleEndian(c *C) {
+	block := []byte("\x10\x01\x10\x01\x10\x01\x10\x01")
+	blockLength := 8
+	byteOrder := binary.LittleEndian
+	value, err := readBinaryInteger(block, blockLength, byteOrder)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, int64(76562361914229008))
+}
+
+// Test readBinaryInteger decodes an 8bit, Big Endian value.
+func (s *ReadSuite) TestReadBinaryInteger8BitBigEndian(c *C) {
+	block := []byte("\x10")
+	blockLength := 1
+	byteOrder := binary.BigEndian
+	value, err := readBinaryInteger(block, blockLength, byteOrder)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, int64(16))
+}
+
+// Test readBinaryInteger decodes an 16bit, Big Endian value.
+func (s *ReadSuite) TestReadBinaryInteger16BitBigEndian(c *C) {
+	block := []byte("\x10\x01")
+	blockLength := 2
+	byteOrder := binary.BigEndian
+	value, err := readBinaryInteger(block, blockLength, byteOrder)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, int64(4097))
+}
+
+// Test readBinaryInteger decodes an 32bit, Big Endian value.
+func (s *ReadSuite) TestReadBinaryInteger32BitBigEndian(c *C) {
+	block := []byte("\x10\x10\x01\x01")
+	blockLength := 4
+	byteOrder := binary.BigEndian
+	value, err := readBinaryInteger(block, blockLength, byteOrder)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, int64(269484289))
+}
+
+// Test readBinaryInteger decodes an 64bit, Big Endian value.
+func (s *ReadSuite) TestReadBinaryInteger64BitBigEndian(c *C) {
+	block := []byte("\x10\x01\x10\x01\x10\x01\x10\x01")
+	blockLength := 8
+	byteOrder := binary.BigEndian
+	value, err := readBinaryInteger(block, blockLength, byteOrder)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, int64(1153220576333074433))
 }
 
 // Test populateStructFromReadSpecAndBytes copies values from a
