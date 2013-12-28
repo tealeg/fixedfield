@@ -318,6 +318,14 @@ func (s *ReadSuite) TestReadBinaryUnsignedInteger64BitBigEndian(c *C) {
 	c.Assert(value, Equals, uint64(1153220576333074433))
 }
 
+// Test readASCIIInteger with positive value
+func (s *ReadSuite) TestReadASCIIIntegerPositive(c *C) {
+	block := []byte("4096")
+	value, err := readASCIIInteger(block)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, int64(4096))
+}
+
 // Test populateStructFromReadSpecAndBytes copies values from a
 // ReaderSeeker into the appropriate structural elements
 func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
