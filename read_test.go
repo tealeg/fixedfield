@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	. "launchpad.net/gocheck"
 	"math"
+	"reflect"
 	"testing"
 )
 
@@ -332,6 +333,29 @@ func (s *ReadSuite) TestReadASCIIIntegerNegative(c *C) {
 	value, err := readASCIIInteger(block)
 	c.Assert(err, IsNil)
 	c.Assert(value, Equals, int64(-4096))
+}
+
+// Test readInteger with ASCII value
+func (s *ReadSuite) TestReadIntegerWithASCII(c *C) {
+	type testStruct struct {
+		Value int64
+	}
+
+	target := &testStruct{}
+	values := reflect.ValueOf(target).Elem()
+	value := values.Field(0)
+	fieldtype := values.Type().Field(0)
+	readspec := readSpec{
+		FieldValue: value,
+		FieldType:  fieldtype,
+		Length:     1,
+		Repeat:     1,
+		Encoding:   "ascii"}
+	block := []byte("3")
+	err := readInteger(readspec, block, 1)
+	c.Assert(err, IsNil)
+	c.Assert(target.Value, Equals, int64(3))
+
 }
 
 // Test populateStructFromReadSpecAndBytes copies values from a
