@@ -355,7 +355,50 @@ func (s *ReadSuite) TestReadIntegerWithASCII(c *C) {
 	err := readInteger(readspec, block, 1)
 	c.Assert(err, IsNil)
 	c.Assert(target.Value, Equals, int64(3))
+}
 
+// Test readInteger with Big Endian binary value
+func (s *ReadSuite) TestReadIntegerWithBigEndianBinary(c *C) {
+	type testStruct struct {
+		Value int64
+	}
+
+	target := &testStruct{}
+	values := reflect.ValueOf(target).Elem()
+	value := values.Field(0)
+	fieldtype := values.Type().Field(0)
+	readspec := readSpec{
+		FieldValue: value,
+		FieldType:  fieldtype,
+		Length:     2,
+		Repeat:     1,
+		Encoding:   "be"}
+	block := []byte("\xff\x00'")
+	err := readInteger(readspec, block, 2)
+	c.Assert(err, IsNil)
+	c.Assert(target.Value, Equals, int64(-256))
+}
+
+// Test readInteger with Little Endian binary value
+func (s *ReadSuite) TestReadIntegerWithLittleEndianBinary(c *C) {
+	type testStruct struct {
+		Value int64
+	}
+
+	target := &testStruct{}
+	values := reflect.ValueOf(target).Elem()
+	value := values.Field(0)
+	fieldtype := values.Type().Field(0)
+	readspec := readSpec{
+		FieldValue: value,
+		FieldType:  fieldtype,
+		Length:     2,
+		Repeat:     1,
+		Encoding:   "le"}
+	block := []byte("\xff\x00'")
+	err := readInteger(readspec, block, 2)
+	c.Assert(err, IsNil)
+	c.Assert(target.Value, Equals, int64(255))
 }
 
 // Test populateStructFromReadSpecAndBytes copies values from a
