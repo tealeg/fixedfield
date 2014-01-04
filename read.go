@@ -11,6 +11,7 @@ import (
 )
 
 type readSpec struct {
+	StructName string
 	FieldValue reflect.Value
 	FieldType  reflect.StructField
 	Length     int
@@ -26,16 +27,22 @@ func (spec *readSpec) String() string {
 // Convert annotation on a structure into a specification for what
 // should be read from a fixed field file.
 func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error) {
-	var values, value reflect.Value
+	var structValue, values, value reflect.Value
+	var structType reflect.Type
 	var spec readSpec
 	var tag reflect.StructTag
-	var length, repeat, encoding string
+	var length, repeat, encoding, structName string
 
-	values = reflect.ValueOf(structure).Elem()
+	structValue = reflect.ValueOf(structure)
+	structType = reflect.TypeOf(structure)
+	structName = structType.String()
+
+	values = structValue.Elem()
 	readSpecs = make([]readSpec, values.NumField())
 
 	for i := 0; i < values.NumField(); i++ {
 		spec = readSpec{}
+		spec.StructName = structName
 		value = values.Field(i)
 		spec.FieldValue = value
 		spec.FieldType = values.Type().Field(i)
@@ -138,6 +145,7 @@ func readBinaryUnsignedInteger(block []byte, blockLength int, byteOrder binary.B
 	return value, err
 }
 
+// Convert an array of ASCII chars, of a known length, into a 64 bit integer.
 func readASCIIInteger(block []byte) (value int64, err error) {
 	var intVal int
 	var blockString string = string(block)
@@ -164,6 +172,12 @@ func readInteger(spec readSpec, block []byte, blockLength int) (err error) {
 		value, err = readBinaryInteger(block, blockLength, binary.BigEndian)
 	case "litteendian", "le":
 		value, err = readBinaryInteger(block, blockLength, binary.LittleEndian)
+	default:
+		reflectType := spec.FieldType.Type
+		kind := reflectType.Kind()
+		typeName := kind.String()
+		name := spec.StructName + "." + spec.FieldType.Name
+		err = fmt.Errorf("Failure unmarshalling %s field '%s'. Integer fields must be annotated with an encoding type of BigEndian, LittleEndian or ASCII", typeName, name)
 	}
 	if err == nil {
 		spec.FieldValue.SetInt(value)

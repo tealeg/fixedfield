@@ -35,6 +35,7 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(result, HasLen, 9)
 	spec := result[0]
+	c.Assert(spec.StructName, Equals, "*fixedfield.Target")
 	c.Assert(spec.FieldType.Name, Equals, "Name")
 	c.Assert(spec.Length, Equals, 5)
 	c.Assert(spec.Repeat, Equals, 1)
@@ -399,6 +400,27 @@ func (s *ReadSuite) TestReadIntegerWithLittleEndianBinary(c *C) {
 	err := readInteger(readspec, block, 2)
 	c.Assert(err, IsNil)
 	c.Assert(target.Value, Equals, int64(255))
+}
+
+// Test readInteger with invalid encoding returns an error
+func (s *ReadSuite) TestReadIntegerWithIvalidEncoding(c *C) {
+	type testStruct struct {
+		Value int64
+	}
+
+	target := &testStruct{}
+	values := reflect.ValueOf(target).Elem()
+	value := values.Field(0)
+	fieldtype := values.Type().Field(0)
+	readspec := readSpec{
+		FieldValue: value,
+		FieldType:  fieldtype,
+		Length:     2,
+		Repeat:     1,
+		Encoding:   "Barney"}
+	block := []byte("\xff\x00'")
+	err := readInteger(readspec, block, 2)
+	c.Assert(err, ErrorMatches, "Failure unmarshalling int64 field.*")
 }
 
 // Test populateStructFromReadSpecAndBytes copies values from a
