@@ -10,6 +10,10 @@ import (
 	"strings"
 )
 
+// A readSpec is created, by buildReadSpecs, for each field in a
+// target structure we wish to populated.  These readSpecs are used by
+// populateStructFromReadSpecAndByte to guide the unmarshalling of
+// byte data into the target struct.
 type readSpec struct {
 	StructName string
 	FieldValue reflect.Value
@@ -163,6 +167,9 @@ func readASCIIInteger(block []byte) (value int64, err error) {
 	return
 }
 
+// Given a readSpec, a block of bytes, and a block length, populate
+// the field defined by the readSpec with a 64bit integer value
+// encoded in the block of bytes.
 func readInteger(spec readSpec, block []byte, blockLength int) (err error) {
 	var value int64
 	switch strings.ToLower(spec.Encoding) {
