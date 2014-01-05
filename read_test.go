@@ -423,6 +423,28 @@ func (s *ReadSuite) TestReadIntegerWithIvalidEncoding(c *C) {
 	c.Assert(err, ErrorMatches, "Failure unmarshalling int64 field.*")
 }
 
+// Test readUnsignedInteger with ASCII value
+func (s *ReadSuite) TestReadUnsignedIntegerWithASCII(c *C) {
+	type testStruct struct {
+		Value uint64
+	}
+
+	target := &testStruct{}
+	values := reflect.ValueOf(target).Elem()
+	value := values.Field(0)
+	fieldtype := values.Type().Field(0)
+	readspec := readSpec{
+		FieldValue: value,
+		FieldType:  fieldtype,
+		Length:     1,
+		Repeat:     1,
+		Encoding:   "ascii"}
+	block := []byte("3")
+	err := readUnsignedInteger(readspec, block, 1)
+	c.Assert(err, IsNil)
+	c.Assert(target.Value, Equals, uint64(3))
+}
+
 // Test populateStructFromReadSpecAndBytes copies values from a
 // ReaderSeeker into the appropriate structural elements
 func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
