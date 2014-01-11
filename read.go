@@ -167,6 +167,14 @@ func readASCIIInteger(block []byte) (value int64, err error) {
 	return
 }
 
+func makeUnmarshalIntegerError(spec readSpec) error {
+	reflectType := spec.FieldType.Type
+	kind := reflectType.Kind()
+	typeName := kind.String()
+	name := spec.StructName + "." + spec.FieldType.Name
+	return fmt.Errorf("Failure unmarshalling %s field '%s'. Integer fields must be annotated with an encoding type of BigEndian, LittleEndian or ASCII", typeName, name)
+}
+
 // Given a readSpec, a block of bytes, and a block length, populate
 // the field defined by the readSpec with a 64bit integer value
 // encoded in the block of bytes.
@@ -180,11 +188,7 @@ func readInteger(spec readSpec, block []byte, blockLength int) (err error) {
 	case "litteendian", "le":
 		value, err = readBinaryInteger(block, blockLength, binary.LittleEndian)
 	default:
-		reflectType := spec.FieldType.Type
-		kind := reflectType.Kind()
-		typeName := kind.String()
-		name := spec.StructName + "." + spec.FieldType.Name
-		err = fmt.Errorf("Failure unmarshalling %s field '%s'. Integer fields must be annotated with an encoding type of BigEndian, LittleEndian or ASCII", typeName, name)
+		err = makeUnmarshalIntegerError(spec)
 	}
 	if err == nil {
 		spec.FieldValue.SetInt(value)
@@ -206,6 +210,8 @@ func readUnsignedInteger(spec readSpec, block []byte, blockLength int) (err erro
 		value, err = readBinaryUnsignedInteger(block, blockLength, binary.BigEndian)
 	case "litteendian", "le":
 		value, err = readBinaryUnsignedInteger(block, blockLength, binary.LittleEndian)
+	default:
+		err = makeUnmarshalIntegerError(spec)
 	}
 	if err == nil {
 		spec.FieldValue.SetUint(value)

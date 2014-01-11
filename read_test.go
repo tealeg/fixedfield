@@ -445,6 +445,71 @@ func (s *ReadSuite) TestReadUnsignedIntegerWithASCII(c *C) {
 	c.Assert(target.Value, Equals, uint64(3))
 }
 
+// Test readUnsignedInteger with Big Endian binary value
+func (s *ReadSuite) TestReadUnsignedIntegerWithBigEndianBinary(c *C) {
+	type testStruct struct {
+		Value uint64
+	}
+
+	target := &testStruct{}
+	values := reflect.ValueOf(target).Elem()
+	value := values.Field(0)
+	fieldtype := values.Type().Field(0)
+	readspec := readSpec{
+		FieldValue: value,
+		FieldType:  fieldtype,
+		Length:     2,
+		Repeat:     1,
+		Encoding:   "be"}
+	block := []byte("\xff\x00'")
+	err := readUnsignedInteger(readspec, block, 2)
+	c.Assert(err, IsNil)
+	c.Assert(target.Value, Equals, uint64(65280))
+}
+
+// Test readUnsignedInteger with Little Endian binary value
+func (s *ReadSuite) TestReadUnsignedIntegerWithLittleEndianBinary(c *C) {
+	type testStruct struct {
+		Value uint64
+	}
+
+	target := &testStruct{}
+	values := reflect.ValueOf(target).Elem()
+	value := values.Field(0)
+	fieldtype := values.Type().Field(0)
+	readspec := readSpec{
+		FieldValue: value,
+		FieldType:  fieldtype,
+		Length:     2,
+		Repeat:     1,
+		Encoding:   "le"}
+	block := []byte("\xff\x00'")
+	err := readUnsignedInteger(readspec, block, 2)
+	c.Assert(err, IsNil)
+	c.Assert(target.Value, Equals, uint64(255))
+}
+
+// Test readUnsignedInteger with invalid encoding returns an error
+func (s *ReadSuite) TestReadUnsignedIntegerWithIvalidEncoding(c *C) {
+	type testStruct struct {
+		Value uint64
+	}
+
+	target := &testStruct{}
+	values := reflect.ValueOf(target).Elem()
+	value := values.Field(0)
+	fieldtype := values.Type().Field(0)
+	readspec := readSpec{
+		FieldValue: value,
+		FieldType:  fieldtype,
+		Length:     2,
+		Repeat:     1,
+		Encoding:   "Barney"}
+	block := []byte("\xff\x00'")
+	err := readUnsignedInteger(readspec, block, 2)
+	c.Assert(err, ErrorMatches, "Failure unmarshalling uint64 field.*")
+}
+
 // Test populateStructFromReadSpecAndBytes copies values from a
 // ReaderSeeker into the appropriate structural elements
 func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
