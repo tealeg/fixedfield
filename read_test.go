@@ -510,6 +510,16 @@ func (s *ReadSuite) TestReadUnsignedIntegerWithIvalidEncoding(c *C) {
 	c.Assert(err, ErrorMatches, "Failure unmarshalling uint64 field.*")
 }
 
+// Test that we can read a LittleEndian floating point value with readBinaryFloat
+func (s *ReadSuite) TestReadBinaryFloatLittleEndian(c *C) {
+
+	// (block []byte, blockLength int, byteOrder binary.ByteOrder
+	block := []byte("\x18\x2d\x44\x54\xfb\x21\x09\x40")
+	value, err := readBinaryFloat(block, 8, binary.LittleEndian)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, math.Pi)
+}
+
 // Test populateStructFromReadSpecAndBytes copies values from a
 // ReaderSeeker into the appropriate structural elements
 func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
