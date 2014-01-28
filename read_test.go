@@ -599,6 +599,29 @@ func (s *ReadSuite) TestReadFloatASCII64Bit(c *C) {
 	c.Assert(target.Value, Equals, float64(3.24))
 }
 
+// Test that we can read a negative 64bit ASCII Float
+func (s *ReadSuite) TestReadFloatASCII64BitNegative(c *C) {
+	type testStruct struct {
+		Value float64
+	}
+
+	target := &testStruct{}
+	values := reflect.ValueOf(target).Elem()
+	value := values.Field(0)
+	fieldtype := values.Type().Field(0)
+	kind := value.Kind()
+	readspec := readSpec{
+		FieldValue: value,
+		FieldType:  fieldtype,
+		Length:     5,
+		Repeat:     1,
+		Encoding:   "ASCII"}
+	block := []byte("-3.24")
+	err := readFloat(readspec, block, 2, kind)
+	c.Assert(err, IsNil)
+	c.Assert(target.Value, Equals, float64(-3.24))
+}
+
 // Test populateStructFromReadSpecAndBytes copies values from a
 // ReaderSeeker into the appropriate structural elements
 func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
