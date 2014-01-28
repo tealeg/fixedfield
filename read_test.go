@@ -520,6 +520,40 @@ func (s *ReadSuite) TestReadBinaryFloatLittleEndian(c *C) {
 	c.Assert(value, Equals, math.Pi)
 }
 
+// Test that we can read a BigEndian floating point value with readBinaryFloat
+func (s *ReadSuite) TestReadBinaryFloatBigEndian(c *C) {
+
+	// (block []byte, blockLength int, byteOrder binary.ByteOrder
+	block := []byte("\x40\x09\x21\xfb\x54\x44\x2d\x18")
+	value, err := readBinaryFloat(block, 8, binary.BigEndian)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, math.Pi)
+}
+
+// Test that we can read a 32bit ASCII Float
+func (s *ReadSuite) TestReadFloatASCII32Bit(c *C) {
+	type testStruct struct {
+		Value float32
+	}
+
+	target := &testStruct{}
+	values := reflect.ValueOf(target).Elem()
+	value := values.Field(0)
+	fieldtype := values.Type().Field(0)
+	kind := value.Kind()
+	readspec := readSpec{
+		FieldValue: value,
+		FieldType:  fieldtype,
+		Length:     4,
+		Repeat:     1,
+		Encoding:   "ASCII"}
+	block := []byte("3.24")
+	err := readFloat(readspec, block, 2, kind)
+	c.Assert(err, IsNil)
+	c.Assert(target.Value, Equals, float32(3.24))
+
+}
+
 // Test populateStructFromReadSpecAndBytes copies values from a
 // ReaderSeeker into the appropriate structural elements
 func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
