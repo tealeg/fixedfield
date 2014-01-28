@@ -668,6 +668,52 @@ func (s *ReadSuite) TestReadFloatBigEndian64Bit(c *C) {
 	c.Assert(target.Value, Equals, math.Pi)
 }
 
+// Test that we can read a 32bit Little Endian Float with readFloat
+func (s *ReadSuite) TestReadFloatLittleEndian32Bit(c *C) {
+	type testStruct struct {
+		Value float32
+	}
+
+	target := &testStruct{}
+	values := reflect.ValueOf(target).Elem()
+	value := values.Field(0)
+	fieldtype := values.Type().Field(0)
+	kind := value.Kind()
+	readspec := readSpec{
+		FieldValue: value,
+		FieldType:  fieldtype,
+		Length:     4,
+		Repeat:     1,
+		Encoding:   "le"}
+	block := []byte("\x40\x09\x21\xfb")
+	err := readFloat(readspec, block, 4, kind)
+	c.Assert(err, IsNil)
+	c.Assert(target.Value, Equals, float32(-8.361474e+35))
+}
+
+// Test that we can read a 64bit Little Endian Float with readFloat
+func (s *ReadSuite) TestReadFloatLittleEndian64Bit(c *C) {
+	type testStruct struct {
+		Value float64
+	}
+
+	target := &testStruct{}
+	values := reflect.ValueOf(target).Elem()
+	value := values.Field(0)
+	fieldtype := values.Type().Field(0)
+	kind := value.Kind()
+	readspec := readSpec{
+		FieldValue: value,
+		FieldType:  fieldtype,
+		Length:     8,
+		Repeat:     1,
+		Encoding:   "le"}
+	block := []byte("\x40\x09\x21\xfb\x54\x44\x2d\x18")
+	err := readFloat(readspec, block, 8, kind)
+	c.Assert(err, IsNil)
+	c.Assert(target.Value, Equals, 3.207375630676366e-192)
+}
+
 // Test populateStructFromReadSpecAndBytes copies values from a
 // ReaderSeeker into the appropriate structural elements
 func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
