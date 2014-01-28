@@ -374,7 +374,7 @@ func (s *ReadSuite) TestReadIntegerWithBigEndianBinary(c *C) {
 		Length:     2,
 		Repeat:     1,
 		Encoding:   "be"}
-	block := []byte("\xff\x00'")
+	block := []byte("\xff\x00")
 	err := readInteger(readspec, block, 2)
 	c.Assert(err, IsNil)
 	c.Assert(target.Value, Equals, int64(-256))
@@ -396,7 +396,7 @@ func (s *ReadSuite) TestReadIntegerWithLittleEndianBinary(c *C) {
 		Length:     2,
 		Repeat:     1,
 		Encoding:   "le"}
-	block := []byte("\xff\x00'")
+	block := []byte("\xff\x00")
 	err := readInteger(readspec, block, 2)
 	c.Assert(err, IsNil)
 	c.Assert(target.Value, Equals, int64(255))
@@ -418,7 +418,7 @@ func (s *ReadSuite) TestReadIntegerWithIvalidEncoding(c *C) {
 		Length:     2,
 		Repeat:     1,
 		Encoding:   "Barney"}
-	block := []byte("\xff\x00'")
+	block := []byte("\xff\x00")
 	err := readInteger(readspec, block, 2)
 	c.Assert(err, ErrorMatches, "Failure unmarshalling int64 field.*")
 }
@@ -461,7 +461,7 @@ func (s *ReadSuite) TestReadUnsignedIntegerWithBigEndianBinary(c *C) {
 		Length:     2,
 		Repeat:     1,
 		Encoding:   "be"}
-	block := []byte("\xff\x00'")
+	block := []byte("\xff\x00")
 	err := readUnsignedInteger(readspec, block, 2)
 	c.Assert(err, IsNil)
 	c.Assert(target.Value, Equals, uint64(65280))
@@ -483,7 +483,7 @@ func (s *ReadSuite) TestReadUnsignedIntegerWithLittleEndianBinary(c *C) {
 		Length:     2,
 		Repeat:     1,
 		Encoding:   "le"}
-	block := []byte("\xff\x00'")
+	block := []byte("\xff\x00")
 	err := readUnsignedInteger(readspec, block, 2)
 	c.Assert(err, IsNil)
 	c.Assert(target.Value, Equals, uint64(255))
@@ -505,7 +505,7 @@ func (s *ReadSuite) TestReadUnsignedIntegerWithIvalidEncoding(c *C) {
 		Length:     2,
 		Repeat:     1,
 		Encoding:   "Barney"}
-	block := []byte("\xff\x00'")
+	block := []byte("\xff\x00")
 	err := readUnsignedInteger(readspec, block, 2)
 	c.Assert(err, ErrorMatches, "Failure unmarshalling uint64 field.*")
 }
@@ -548,7 +548,7 @@ func (s *ReadSuite) TestReadFloatASCII32Bit(c *C) {
 		Repeat:     1,
 		Encoding:   "ASCII"}
 	block := []byte("3.24")
-	err := readFloat(readspec, block, 2, kind)
+	err := readFloat(readspec, block, 4, kind)
 	c.Assert(err, IsNil)
 	c.Assert(target.Value, Equals, float32(3.24))
 }
@@ -571,7 +571,7 @@ func (s *ReadSuite) TestReadFloatASCII32BitNegative(c *C) {
 		Repeat:     1,
 		Encoding:   "ASCII"}
 	block := []byte("-3.24")
-	err := readFloat(readspec, block, 2, kind)
+	err := readFloat(readspec, block, 5, kind)
 	c.Assert(err, IsNil)
 	c.Assert(target.Value, Equals, float32(-3.24))
 }
@@ -594,7 +594,7 @@ func (s *ReadSuite) TestReadFloatASCII64Bit(c *C) {
 		Repeat:     1,
 		Encoding:   "ASCII"}
 	block := []byte("3.24")
-	err := readFloat(readspec, block, 2, kind)
+	err := readFloat(readspec, block, 4, kind)
 	c.Assert(err, IsNil)
 	c.Assert(target.Value, Equals, float64(3.24))
 }
@@ -617,9 +617,55 @@ func (s *ReadSuite) TestReadFloatASCII64BitNegative(c *C) {
 		Repeat:     1,
 		Encoding:   "ASCII"}
 	block := []byte("-3.24")
-	err := readFloat(readspec, block, 2, kind)
+	err := readFloat(readspec, block, 5, kind)
 	c.Assert(err, IsNil)
 	c.Assert(target.Value, Equals, float64(-3.24))
+}
+
+// Test that we can read a 32bit Big Endian Float with readFloat
+func (s *ReadSuite) TestReadFloatBigEndian32Bit(c *C) {
+	type testStruct struct {
+		Value float32
+	}
+
+	target := &testStruct{}
+	values := reflect.ValueOf(target).Elem()
+	value := values.Field(0)
+	fieldtype := values.Type().Field(0)
+	kind := value.Kind()
+	readspec := readSpec{
+		FieldValue: value,
+		FieldType:  fieldtype,
+		Length:     4,
+		Repeat:     1,
+		Encoding:   "be"}
+	block := []byte("\x40\x09\x21\xfb")
+	err := readFloat(readspec, block, 4, kind)
+	c.Assert(err, IsNil)
+	c.Assert(target.Value, Equals, float32(2.142699))
+}
+
+// Test that we can read a 64bit Big Endian Float with readFloat
+func (s *ReadSuite) TestReadFloatBigEndian64Bit(c *C) {
+	type testStruct struct {
+		Value float64
+	}
+
+	target := &testStruct{}
+	values := reflect.ValueOf(target).Elem()
+	value := values.Field(0)
+	fieldtype := values.Type().Field(0)
+	kind := value.Kind()
+	readspec := readSpec{
+		FieldValue: value,
+		FieldType:  fieldtype,
+		Length:     8,
+		Repeat:     1,
+		Encoding:   "be"}
+	block := []byte("\x40\x09\x21\xfb\x54\x44\x2d\x18")
+	err := readFloat(readspec, block, 8, kind)
+	c.Assert(err, IsNil)
+	c.Assert(target.Value, Equals, math.Pi)
 }
 
 // Test populateStructFromReadSpecAndBytes copies values from a
