@@ -553,6 +553,29 @@ func (s *ReadSuite) TestReadFloatASCII32Bit(c *C) {
 	c.Assert(target.Value, Equals, float32(3.24))
 }
 
+// Test that we can read a negative 32bit ASCII Float
+func (s *ReadSuite) TestReadFloatASCII32BitNegative(c *C) {
+	type testStruct struct {
+		Value float32
+	}
+
+	target := &testStruct{}
+	values := reflect.ValueOf(target).Elem()
+	value := values.Field(0)
+	fieldtype := values.Type().Field(0)
+	kind := value.Kind()
+	readspec := readSpec{
+		FieldValue: value,
+		FieldType:  fieldtype,
+		Length:     5,
+		Repeat:     1,
+		Encoding:   "ASCII"}
+	block := []byte("-3.24")
+	err := readFloat(readspec, block, 2, kind)
+	c.Assert(err, IsNil)
+	c.Assert(target.Value, Equals, float32(-3.24))
+}
+
 // Test that we can read a 64bit ASCII Float
 func (s *ReadSuite) TestReadFloatASCII64Bit(c *C) {
 	type testStruct struct {
