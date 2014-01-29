@@ -24,7 +24,8 @@ type Target struct {
 	NoseCapacity   float64 `length:"6" encoding:"ascii"`
 	Pi             float64 `length:"8" encoding:"le"`
 	UpsideDownCake float32 `length:"4" encoding:"be"`
-	Ratings        []int   `length:"1" repeat:"10"`
+	Enrolled       bool
+	Ratings        []int `length:"1" repeat:"10"`
 }
 
 // buildReadSpecs can read a struct and it's tags to build a valid
@@ -33,7 +34,7 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	target := &Target{}
 	result, err := buildReadSpecs(target)
 	c.Assert(err, IsNil)
-	c.Assert(result, HasLen, 9)
+	c.Assert(result, HasLen, 10)
 	spec := result[0]
 	c.Assert(spec.StructName, Equals, "*fixedfield.Target")
 	c.Assert(spec.FieldType.Name, Equals, "Name")
@@ -75,6 +76,11 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	c.Assert(spec.Repeat, Equals, 1)
 	c.Assert(spec.Encoding, Equals, "be")
 	spec = result[8]
+	c.Assert(spec.FieldType.Name, Equals, "Enrolled")
+	c.Assert(spec.Length, Equals, 1)
+	c.Assert(spec.Repeat, Equals, 1)
+	c.Assert(spec.Encoding, Equals, "LE")
+	spec = result[9]
 	c.Assert(spec.FieldType.Name, Equals, "Ratings")
 	c.Assert(spec.Length, Equals, 1)
 	c.Assert(spec.Repeat, Equals, 10)
@@ -747,7 +753,8 @@ func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
 			"001.23" +
 			"\x18\x2d\x44\x54\xfb\x21\x09\x40" +
 			"\x40\x49\x0f\xdb" +
-			"0123456789"))
+			"0123456789" +
+			"\x00"))
 	target := &Target{}
 	readSpec, err := buildReadSpecs(target)
 	c.Assert(err, IsNil)
@@ -761,4 +768,5 @@ func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
 	c.Assert(target.NoseCapacity, Equals, 1.23)
 	c.Assert(target.Pi, Equals, math.Pi)
 	c.Assert(target.UpsideDownCake, Equals, float32(math.Pi))
+	c.Assert(target.Enrolled, Equals, false)
 }

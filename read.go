@@ -85,6 +85,15 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error) {
 			} else {
 				spec.Encoding = encoding
 			}
+		case reflect.Bool:
+			if spec.Length == 0 {
+				spec.Length = 1
+			}
+			if len(encoding) == 0 {
+				spec.Encoding = "LE"
+			} else {
+				spec.Encoding = encoding
+			}
 		}
 		readSpecs[i] = spec
 	}
