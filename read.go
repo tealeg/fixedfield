@@ -194,7 +194,7 @@ func readInteger(spec readSpec, block []byte, blockLength int) (err error) {
 		value, err = readASCIIInteger(block)
 	case "bigendian", "be":
 		value, err = readBinaryInteger(block, blockLength, binary.BigEndian)
-	case "litteendian", "le":
+	case "littleendian", "le":
 		value, err = readBinaryInteger(block, blockLength, binary.LittleEndian)
 	default:
 		err = makeUnmarshalIntegerError(spec)
@@ -217,7 +217,7 @@ func readUnsignedInteger(spec readSpec, block []byte, blockLength int) (err erro
 		}
 	case "bigendian", "be":
 		value, err = readBinaryUnsignedInteger(block, blockLength, binary.BigEndian)
-	case "litteendian", "le":
+	case "littleendian", "le":
 		value, err = readBinaryUnsignedInteger(block, blockLength, binary.LittleEndian)
 	default:
 		err = makeUnmarshalIntegerError(spec)
@@ -257,15 +257,37 @@ func readFloat(spec readSpec, block []byte, bytesRead int, kind reflect.Kind) (e
 		}
 	case "bigendian", "be":
 		f64Val, err = readBinaryFloat(block, bytesRead, binary.BigEndian)
-	case "litteendian", "le":
+	case "littleendian", "le":
 		f64Val, err = readBinaryFloat(block, bytesRead, binary.LittleEndian)
-
+	default:
+		err = fmt.Errorf("Invalid encoding for a floating point value specified. %s",
+			spec.String())
 	}
 
 	if err == nil {
 		spec.FieldValue.SetFloat(f64Val)
 	}
 	return err
+}
+
+func readBool(spec readSpec, block []byte, bytesRead int) (err error) {
+	var boolVal bool
+
+	switch strings.ToLower(spec.Encoding) {
+	case "littleendian", "le", "bigendian", "be", "byte":
+		if bytesRead > 1 {
+			err = fmt.Errorf("Booleans can only be 1 byte long, %d bytes specified for %s", spec.Length, spec.FieldType.Name)
+		}
+		boolVal = int(block[0]) != 0
+	default:
+		err = fmt.Errorf("Invalid encoding for a boolean value specified. %s",
+			spec.String())
+	}
+	if err == nil {
+		spec.FieldValue.SetBool(boolVal)
+	}
+	return err
+
 }
 
 func populateStructFromReadSpecAndBytes(target interface{}, readSpecs []readSpec, data io.Reader) (err error) {
@@ -289,6 +311,8 @@ func populateStructFromReadSpecAndBytes(target interface{}, readSpecs []readSpec
 			err = readUnsignedInteger(spec, block, bytesRead)
 		case reflect.Float64, reflect.Float32:
 			err = readFloat(spec, block, bytesRead, kind)
+		case reflect.Bool:
+			err = readBool(spec, block, bytesRead)
 		}
 
 		if err != nil {

@@ -16,16 +16,17 @@ type ReadSuite struct{}
 var _ = Suite(&ReadSuite{})
 
 type Target struct {
-	Name           string  `length:"5"`
-	Age            int     `length:"2" encoding:"ascii"`
-	ShoeSize       int     `length:"2" encoding:"bigendian"`
-	CollarSize     int     `length:"2" encoding:"le"`
-	ElbowBreadth   uint    `length:"8" encoding:"le"`
-	NoseCapacity   float64 `length:"6" encoding:"ascii"`
-	Pi             float64 `length:"8" encoding:"le"`
-	UpsideDownCake float32 `length:"4" encoding:"be"`
-	Enrolled       bool
-	Ratings        []int `length:"1" repeat:"10"`
+	Name             string  `length:"5"`
+	Age              int     `length:"2" encoding:"ascii"`
+	ShoeSize         int     `length:"2" encoding:"bigendian"`
+	CollarSize       int     `length:"2" encoding:"le"`
+	ElbowBreadth     uint    `length:"8" encoding:"le"`
+	NoseCapacity     float64 `length:"6" encoding:"ascii"`
+	Pi               float64 `length:"8" encoding:"le"`
+	UpsideDownCake   float32 `length:"4" encoding:"be"`
+	Enrolled         bool
+	ShouldBeEnrolled bool
+	Ratings          []int `length:"1" repeat:"10"`
 }
 
 // buildReadSpecs can read a struct and it's tags to build a valid
@@ -34,7 +35,7 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	target := &Target{}
 	result, err := buildReadSpecs(target)
 	c.Assert(err, IsNil)
-	c.Assert(result, HasLen, 10)
+	c.Assert(result, HasLen, 11)
 	spec := result[0]
 	c.Assert(spec.StructName, Equals, "*fixedfield.Target")
 	c.Assert(spec.FieldType.Name, Equals, "Name")
@@ -81,6 +82,11 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	c.Assert(spec.Repeat, Equals, 1)
 	c.Assert(spec.Encoding, Equals, "LE")
 	spec = result[9]
+	c.Assert(spec.FieldType.Name, Equals, "ShouldBeEnrolled")
+	c.Assert(spec.Length, Equals, 1)
+	c.Assert(spec.Repeat, Equals, 1)
+	c.Assert(spec.Encoding, Equals, "LE")
+	spec = result[10]
 	c.Assert(spec.FieldType.Name, Equals, "Ratings")
 	c.Assert(spec.Length, Equals, 1)
 	c.Assert(spec.Repeat, Equals, 10)
@@ -741,6 +747,33 @@ func (s *ReadSuite) TestReadFloatInvalidEncoding(c *C) {
 	c.Assert(err, ErrorMatches, "Failure unmarshalling float64 field.*")
 }
 
+// Test that we can read binary encoded boolean values where a whole
+// byte is used per bool.
+func (s *ReadSuite) TestReadBoolByte(c *C) {
+	type testStruct struct {
+		Value bool
+	}
+
+	target := &testStruct{}
+	values := reflect.ValueOf(target).Elem()
+	value := values.Field(0)
+	fieldtype := values.Type().Field(0)
+	readspec := readSpec{
+		FieldValue: value,
+		FieldType:  fieldtype,
+		Length:     1,
+		Repeat:     1,
+		Encoding:   "le"}
+	block := []byte("\x00")
+	err := readBool(readspec, block, 1)
+	c.Assert(err, IsNil)
+	c.Assert(target.Value, Equals, false)
+	block = []byte("\x01")
+	err = readBool(readspec, block, 1)
+	c.Assert(err, IsNil)
+	c.Assert(target.Value, Equals, true)
+}
+
 // Test populateStructFromReadSpecAndBytes copies values from a
 // ReaderSeeker into the appropriate structural elements
 func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
@@ -753,8 +786,9 @@ func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
 			"001.23" +
 			"\x18\x2d\x44\x54\xfb\x21\x09\x40" +
 			"\x40\x49\x0f\xdb" +
-			"0123456789" +
-			"\x00"))
+			"\x00" +
+			"\x01" +
+			"0123456789"))
 	target := &Target{}
 	readSpec, err := buildReadSpecs(target)
 	c.Assert(err, IsNil)
@@ -769,4 +803,5 @@ func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
 	c.Assert(target.Pi, Equals, math.Pi)
 	c.Assert(target.UpsideDownCake, Equals, float32(math.Pi))
 	c.Assert(target.Enrolled, Equals, false)
+	c.Assert(target.ShouldBeEnrolled, Equals, true)
 }
