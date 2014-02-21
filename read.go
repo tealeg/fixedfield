@@ -21,6 +21,7 @@ type readSpec struct {
 	Length     int
 	Repeat     int
 	Encoding   string
+	TrueBytes  []byte
 }
 
 func (spec *readSpec) String() string {
@@ -35,7 +36,7 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error) {
 	var structType reflect.Type
 	var spec readSpec
 	var tag reflect.StructTag
-	var length, repeat, encoding, structName string
+	var length, repeat, encoding, structName, trueChars string
 
 	structValue = reflect.ValueOf(structure)
 	structType = reflect.TypeOf(structure)
@@ -54,6 +55,7 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error) {
 		length = tag.Get("length")
 		repeat = tag.Get("repeat")
 		encoding = tag.Get("encoding")
+		trueChars = tag.Get("trueChars")
 		if len(length) == 0 {
 			spec.Length = 0
 		} else {
@@ -93,6 +95,13 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error) {
 				spec.Encoding = "LE"
 			} else {
 				spec.Encoding = encoding
+				if encoding == "ascii" {
+					if len(trueChars) == 0 {
+						spec.TrueBytes = []byte("Yy")
+					} else {
+						spec.TrueBytes = []byte(trueChars)
+					}
+				}
 			}
 		}
 		readSpecs[i] = spec
@@ -290,8 +299,7 @@ func readBool(spec readSpec, block []byte, bytesRead int) (err error) {
 		}
 		boolVal = int(block[0]) != 0
 	case "ascii":
-		// 0x59 = "Y", 0x79 = "y"
-		boolVal = block[0] == 0x59 || block[0] == 0x79
+		boolVal = bytes.Contains(spec.TrueBytes, block)
 	default:
 		err = fmt.Errorf("Invalid encoding for a boolean value specified. %s",
 			spec.String())

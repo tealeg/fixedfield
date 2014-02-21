@@ -26,6 +26,7 @@ type Target struct {
 	UpsideDownCake   float32 `length:"4" encoding:"be"`
 	Enrolled         bool
 	ShouldBeEnrolled bool `encoding:"ascii"`
+	Dispatched       bool `encoding:"ascii" trueChars:"jJ"`
 	Ratings          []int `length:"1" repeat:"10"`
 }
 
@@ -35,7 +36,7 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	target := &Target{}
 	result, err := buildReadSpecs(target)
 	c.Assert(err, IsNil)
-	c.Assert(result, HasLen, 11)
+	c.Assert(result, HasLen, 12)
 	spec := result[0]
 	c.Assert(spec.StructName, Equals, "*fixedfield.Target")
 	c.Assert(spec.FieldType.Name, Equals, "Name")
@@ -86,7 +87,14 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	c.Assert(spec.Length, Equals, 1)
 	c.Assert(spec.Repeat, Equals, 1)
 	c.Assert(spec.Encoding, Equals, "ascii")
+	c.Assert(string(spec.TrueBytes), Equals, "Yy")
 	spec = result[10]
+	c.Assert(spec.FieldType.Name, Equals, "Dispatched")
+	c.Assert(spec.Length, Equals, 1)
+	c.Assert(spec.Repeat, Equals, 1)
+	c.Assert(spec.Encoding, Equals, "ascii")
+	c.Assert(string(spec.TrueBytes), Equals, "jJ")
+	spec = result[11]
 	c.Assert(spec.FieldType.Name, Equals, "Ratings")
 	c.Assert(spec.Length, Equals, 1)
 	c.Assert(spec.Repeat, Equals, 10)
@@ -775,7 +783,11 @@ func (s *ReadSuite) TestReadBoolByte(c *C) {
 }
 
 // Test that we can read binary encoded boolean values where the
-// characters "Y" and "N" are used to indicate True and False
+// characters are used to indicate True and False.  The characters in
+// question are defined by the value of TrueBytes in the readSpec - if
+// any one byte from the TrueBytes array matches the byte being read
+// then the value of the target struct is set to true, if no byte
+// matches then the value of the target struct is set to false.
 func (s *ReadSuite) TestReadBoolASCII(c *C) {
 	type testStruct struct {
 		Value bool
@@ -790,12 +802,13 @@ func (s *ReadSuite) TestReadBoolASCII(c *C) {
 		FieldType:  fieldtype,
 		Length:     1,
 		Repeat:     1,
-		Encoding:   "ascii"}
-	block := []byte("\x4E")
+		Encoding:   "ascii",
+		TrueBytes: []byte("\x4A\x6A")}
+	block := []byte("\x40")
 	err := readBool(readspec, block, 1)
 	c.Assert(err, IsNil)
 	c.Assert(target.Value, Equals, false)
-	block = []byte("\x59")
+	block = []byte("\x4A")
 	err = readBool(readspec, block, 1)
 	c.Assert(err, IsNil)
 	c.Assert(target.Value, Equals, true)
