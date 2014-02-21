@@ -206,6 +206,9 @@ func readInteger(spec readSpec, block []byte, blockLength int) (err error) {
 	return err
 }
 
+// Given a readSpec, a block of bytes, and a block length, populate
+// the field defined by the readSpec with a 64bit unsigned integer value
+// encoded in the block of bytes.
 func readUnsignedInteger(spec readSpec, block []byte, blockLength int) (err error) {
 	var intVal int
 	var value uint64
@@ -229,6 +232,9 @@ func readUnsignedInteger(spec readSpec, block []byte, blockLength int) (err erro
 	return err
 }
 
+// Given a block of bytes, a block length, and a byte order, populate
+// the field defined by the readSpec with a 64bit float value encoded
+// in the block of bytes.
 func readBinaryFloat(block []byte, blockLength int, byteOrder binary.ByteOrder) (value float64, err error) {
 	buffer := bytes.NewBuffer(block)
 	switch blockLength {
@@ -246,6 +252,8 @@ func readBinaryFloat(block []byte, blockLength int, byteOrder binary.ByteOrder) 
 	return
 }
 
+// Read a 64bit float from a block of bytes using encoding
+// information from the readSpec.
 func readFloat(spec readSpec, block []byte, bytesRead int, kind reflect.Kind) (err error) {
 	var f64Val float64
 	switch strings.ToLower(spec.Encoding) {
@@ -270,6 +278,8 @@ func readFloat(spec readSpec, block []byte, bytesRead int, kind reflect.Kind) (e
 	return err
 }
 
+// Read a boolean from a block of bytes using encoding
+// information from the readSpec.
 func readBool(spec readSpec, block []byte, bytesRead int) (err error) {
 	var boolVal bool
 
@@ -279,6 +289,9 @@ func readBool(spec readSpec, block []byte, bytesRead int) (err error) {
 			err = fmt.Errorf("Booleans can only be 1 byte long, %d bytes specified for %s", spec.Length, spec.FieldType.Name)
 		}
 		boolVal = int(block[0]) != 0
+	case "ascii":
+		// 0x59 = "Y", 0x79 = "y"
+		boolVal = block[0] == 0x59 || block[0] == 0x79
 	default:
 		err = fmt.Errorf("Invalid encoding for a boolean value specified. %s",
 			spec.String())

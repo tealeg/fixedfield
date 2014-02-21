@@ -25,7 +25,7 @@ type Target struct {
 	Pi               float64 `length:"8" encoding:"le"`
 	UpsideDownCake   float32 `length:"4" encoding:"be"`
 	Enrolled         bool
-	ShouldBeEnrolled bool
+	ShouldBeEnrolled bool `encoding:"ascii"`
 	Ratings          []int `length:"1" repeat:"10"`
 }
 
@@ -85,7 +85,7 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	c.Assert(spec.FieldType.Name, Equals, "ShouldBeEnrolled")
 	c.Assert(spec.Length, Equals, 1)
 	c.Assert(spec.Repeat, Equals, 1)
-	c.Assert(spec.Encoding, Equals, "LE")
+	c.Assert(spec.Encoding, Equals, "ascii")
 	spec = result[10]
 	c.Assert(spec.FieldType.Name, Equals, "Ratings")
 	c.Assert(spec.Length, Equals, 1)
@@ -774,6 +774,33 @@ func (s *ReadSuite) TestReadBoolByte(c *C) {
 	c.Assert(target.Value, Equals, true)
 }
 
+// Test that we can read binary encoded boolean values where the
+// characters "Y" and "N" are used to indicate True and False
+func (s *ReadSuite) TestReadBoolASCII(c *C) {
+	type testStruct struct {
+		Value bool
+	}
+
+	target := &testStruct{}
+	values := reflect.ValueOf(target).Elem()
+	value := values.Field(0)
+	fieldtype := values.Type().Field(0)
+	readspec := readSpec{
+		FieldValue: value,
+		FieldType:  fieldtype,
+		Length:     1,
+		Repeat:     1,
+		Encoding:   "ascii"}
+	block := []byte("\x4E")
+	err := readBool(readspec, block, 1)
+	c.Assert(err, IsNil)
+	c.Assert(target.Value, Equals, false)
+	block = []byte("\x59")
+	err = readBool(readspec, block, 1)
+	c.Assert(err, IsNil)
+	c.Assert(target.Value, Equals, true)
+}
+
 // Test populateStructFromReadSpecAndBytes copies values from a
 // ReaderSeeker into the appropriate structural elements
 func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
@@ -787,7 +814,7 @@ func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
 			"\x18\x2d\x44\x54\xfb\x21\x09\x40" +
 			"\x40\x49\x0f\xdb" +
 			"\x00" +
-			"\x01" +
+			"\x59" +
 			"0123456789"))
 	target := &Target{}
 	readSpec, err := buildReadSpecs(target)
