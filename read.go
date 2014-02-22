@@ -29,28 +29,21 @@ func (spec *readSpec) String() string {
 		spec.FieldType.Name, spec.FieldValue.Interface(), spec.Length, spec.Repeat)
 }
 
-// Convert annotation on a structure into a specification for what
-// should be read from a fixed field file.
-func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error) {
-	var structValue, values, value reflect.Value
-	var structType reflect.Type
+
+func buildReadSpecsFromElems(value reflect.Value, structName string) (readSpecs []readSpec, err error){
+	var fieldCount int
 	var spec readSpec
 	var tag reflect.StructTag
-	var length, repeat, encoding, structName, trueChars string
+	var length, repeat, encoding, trueChars string
 
-	structValue = reflect.ValueOf(structure)
-	structType = reflect.TypeOf(structure)
-	structName = structType.String()
+	fieldCount = value.NumField()
+	readSpecs = make([]readSpec, fieldCount)
 
-	values = structValue.Elem()
-	readSpecs = make([]readSpec, values.NumField())
-
-	for i := 0; i < values.NumField(); i++ {
+	for i := 0; i < fieldCount; i++ {
 		spec = readSpec{}
 		spec.StructName = structName
-		value = values.Field(i)
-		spec.FieldValue = value
-		spec.FieldType = values.Type().Field(i)
+		spec.FieldValue = value.Field(i)
+		spec.FieldType = value.Type().Field(i)
 		tag = spec.FieldType.Tag
 		length = tag.Get("length")
 		repeat = tag.Get("repeat")
@@ -72,7 +65,7 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error) {
 				return nil, err
 			}
 		}
-		switch value.Kind() {
+		switch spec.FieldValue.Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32,
 			reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16,
 			reflect.Uint32, reflect.Uint64:
@@ -103,9 +96,36 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error) {
 					}
 				}
 			}
+		case reflect.Struct:
+			subStructName := spec.FieldValue.Type().String()
+			subReadSpecs, err := buildReadSpecsFromElems(
+				spec.FieldValue, subStructName)
+			if err != nil {
+				return nil, err
+			}
+			newSlice := make([]readSpec, len(readSpecs)+len(subReadSpecs))
+			copy(newSlice, readSpecs)
+			copy(newSlice[len(readSpecs):], subReadSpecs)
+			readSpecs = newSlice
 		}
 		readSpecs[i] = spec
 	}
+	return readSpecs, nil
+}
+
+// Convert annotation on a structure into a specification for what
+// should be read from a fixed field file.
+func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error) {
+	var structValue, value reflect.Value
+	var structType reflect.Type
+	var structName string
+
+	structValue = reflect.ValueOf(structure)
+	structType = reflect.TypeOf(structure)
+	structName = structType.String()
+
+	value = structValue.Elem()
+	readSpecs, err = buildReadSpecsFromElems(value, structName)
 	return readSpecs, nil
 }
 

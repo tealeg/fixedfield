@@ -17,7 +17,7 @@ var _ = Suite(&ReadSuite{})
 
 type Person struct {
 	Name string `length:"5"`
-	Age int
+	Age int `length:"1"`
 }
 
 type Target struct {
@@ -33,7 +33,7 @@ type Target struct {
 	ShouldBeEnrolled bool `encoding:"ascii"`
 	Dispatched       bool `encoding:"ascii" trueChars:"jJ"`
 	Ratings          []int `length:"1" repeat:"10"`
-	Friend           *Person
+	Friend           Person
 }
 
 // buildReadSpecs can read a struct and it's tags to build a valid
@@ -42,7 +42,7 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	target := &Target{}
 	result, err := buildReadSpecs(target)
 	c.Assert(err, IsNil)
-	c.Assert(result, HasLen, 13)
+	c.Assert(result, HasLen, 15)
 	spec := result[0]
 	c.Assert(spec.StructName, Equals, "*fixedfield.Target")
 	c.Assert(spec.FieldType.Name, Equals, "Name")
@@ -107,8 +107,18 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	// TODO, pad out with what we really need for an array
 	spec = result[12]
 	c.Assert(spec.FieldType.Name, Equals, "Friend")
-	c.Assert(spec.FieldType.Type.Kind(), Equals, reflect.Ptr)
-	c.Assert(spec.FieldType.Type.Elem().Name(), Equals, "Person")
+	c.Assert(spec.FieldType.Type.Kind(), Equals, reflect.Struct)
+	// We should have recurred and have continued populating the
+	// results with the sub struct.
+	spec = result[13]
+	c.Assert(spec.StructName, Equals, "fixedfield.Person")
+	c.Assert(spec.FieldType.Name, Equals, "Name")
+	c.Assert(spec.Length, Equals, 5)
+	c.Assert(spec.Repeat, Equals, 1)
+	spec = result[14]
+	c.Assert(spec.FieldType.Name, Equals, "Age")
+	c.Assert(spec.Length, Equals, 1)
+	c.Assert(spec.Repeat, Equals, 1)
 }
 
 // Test readBinaryInteger decodes an 8bit, Little Endian value.
