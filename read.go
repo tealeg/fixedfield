@@ -339,21 +339,9 @@ func populateStructFromReadSpecAndBytes(target interface{}, readSpecs []readSpec
 		if err != nil {
 			return err
 		}
-		// Invalid Kind = iota
-		// Bool
-		// Uintptr
-		// Complex64
-		// Complex128
-		// Array
-		// Chan
-		// Func
-		// Interface
-		// Map
-		// Ptr
-		// Slice
-
 		// Struct
-		// UnsafePointer
+
+		// Array
 	}
 	return nil
 }
