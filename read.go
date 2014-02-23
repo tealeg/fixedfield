@@ -329,7 +329,7 @@ func readBool(spec readSpec, block []byte, bytesRead int) (err error) {
 
 }
 
-func populateStructFromReadSpecAndBytes(target interface{}, readSpecs []readSpec, data io.Reader) (err error) {
+func populateStructFromReadSpecAndBytes(readSpecs []readSpec, data io.Reader) (err error) {
 	for _, spec := range readSpecs {
 		var bytesRead int
 		block := make([]byte, spec.Length)
@@ -352,6 +352,9 @@ func populateStructFromReadSpecAndBytes(target interface{}, readSpecs []readSpec
 			err = readFloat(spec, block, bytesRead, kind)
 		case reflect.Bool:
 			err = readBool(spec, block, bytesRead)
+		case reflect.Struct:
+			// Recur, exploring the nested specification.
+			err = populateStructFromReadSpecAndBytes(spec.Children, data)
 		}
 
 		if err != nil {

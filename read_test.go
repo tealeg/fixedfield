@@ -879,7 +879,7 @@ func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
 	target := &Target{}
 	readSpec, err := buildReadSpecs(target)
 	c.Assert(err, IsNil)
-	err = populateStructFromReadSpecAndBytes(target, readSpec, data)
+	err = populateStructFromReadSpecAndBytes(readSpec, data)
 	c.Assert(err, IsNil)
 	c.Assert(target.Name, Equals, "Geoff")
 	c.Assert(target.Age, Equals, 36)
@@ -894,3 +894,19 @@ func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
 }
 
 // Test that populateStructFromReadSpecAndBytes copes with nested structs
+func (s *ReadSuite) TestPopulateNestedStructFromReadSpecAndBytes(c *C) {
+	data := bytes.NewBuffer(
+		[]byte("Geoff" +
+			"\x25" +
+			"Elisa" +
+			"\x04"))
+	transaction := &Transaction{}
+	readSpec, err := buildReadSpecs(transaction)
+	c.Assert(err, IsNil)
+	err = populateStructFromReadSpecAndBytes(readSpec, data)
+	c.Assert(err, IsNil)
+	c.Assert(transaction.Buyer.Name, Equals, "Geoff")
+	c.Assert(transaction.Buyer.Age, Equals, 37)
+	c.Assert(transaction.Seller.Name, Equals, "Elisa")
+	c.Assert(transaction.Seller.Age, Equals, 4)
+}
