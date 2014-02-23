@@ -22,6 +22,7 @@ type readSpec struct {
 	Repeat     int
 	Encoding   string
 	TrueBytes  []byte
+	Children []readSpec
 }
 
 func (spec *readSpec) String() string {
@@ -35,6 +36,7 @@ func buildReadSpecsFromElems(value reflect.Value, structName string) (readSpecs 
 	var spec readSpec
 	var tag reflect.StructTag
 	var length, repeat, encoding, trueChars string
+	var subStructName string
 
 	fieldCount = value.NumField()
 	readSpecs = make([]readSpec, fieldCount)
@@ -97,16 +99,12 @@ func buildReadSpecsFromElems(value reflect.Value, structName string) (readSpecs 
 				}
 			}
 		case reflect.Struct:
-			subStructName := spec.FieldValue.Type().String()
-			subReadSpecs, err := buildReadSpecsFromElems(
+			subStructName = spec.FieldValue.Type().String()
+			spec.Children, err = buildReadSpecsFromElems(
 				spec.FieldValue, subStructName)
 			if err != nil {
 				return nil, err
 			}
-			newSlice := make([]readSpec, len(readSpecs)+len(subReadSpecs))
-			copy(newSlice, readSpecs)
-			copy(newSlice[len(readSpecs):], subReadSpecs)
-			readSpecs = newSlice
 		}
 		readSpecs[i] = spec
 	}

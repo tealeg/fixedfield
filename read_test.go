@@ -33,7 +33,11 @@ type Target struct {
 	ShouldBeEnrolled bool `encoding:"ascii"`
 	Dispatched       bool `encoding:"ascii" trueChars:"jJ"`
 	Ratings          []int `length:"1" repeat:"10"`
-	Friend           Person
+}
+
+type Transaction struct {
+	Buyer Person
+	Seller Person
 }
 
 // buildReadSpecs can read a struct and it's tags to build a valid
@@ -42,7 +46,7 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	target := &Target{}
 	result, err := buildReadSpecs(target)
 	c.Assert(err, IsNil)
-	c.Assert(result, HasLen, 15)
+	c.Assert(result, HasLen, 12)
 	spec := result[0]
 	c.Assert(spec.StructName, Equals, "*fixedfield.Target")
 	c.Assert(spec.FieldType.Name, Equals, "Name")
@@ -105,20 +109,42 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	c.Assert(spec.Length, Equals, 1)
 	c.Assert(spec.Repeat, Equals, 10)
 	// TODO, pad out with what we really need for an array
-	spec = result[12]
-	c.Assert(spec.FieldType.Name, Equals, "Friend")
-	c.Assert(spec.FieldType.Type.Kind(), Equals, reflect.Struct)
-	// We should have recurred and have continued populating the
-	// results with the sub struct.
-	spec = result[13]
-	c.Assert(spec.StructName, Equals, "fixedfield.Person")
-	c.Assert(spec.FieldType.Name, Equals, "Name")
-	c.Assert(spec.Length, Equals, 5)
+}
+
+// Test that buildReadSpecs copes with nested structures
+func (s *ReadSuite) TestBuildReadSpecsWithNestedStructs(c *C) {
+	transaction := &Transaction{}
+	result, err := buildReadSpecs(transaction)
+	c.Assert(err, IsNil)
+	c.Assert(result, HasLen, 2)
+	spec := result[0]
+	c.Assert(spec.StructName, Equals, "*fixedfield.Transaction")
+	c.Assert(spec.FieldType.Name, Equals, "Buyer")
+	c.Assert(spec.Length, Equals, 0)
 	c.Assert(spec.Repeat, Equals, 1)
-	spec = result[14]
-	c.Assert(spec.FieldType.Name, Equals, "Age")
-	c.Assert(spec.Length, Equals, 1)
+	c.Assert(len(spec.Children), Equals, 2)
+	childSpec := spec.Children[0]
+	c.Assert(childSpec.StructName, Equals, "fixedfield.Person")
+	c.Assert(childSpec.FieldType.Name, Equals, "Name")
+	c.Assert(childSpec.Length, Equals, 5)
+	c.Assert(childSpec.Repeat, Equals, 1)
+	childSpec = spec.Children[1]
+	c.Assert(childSpec.StructName, Equals, "fixedfield.Person")
+	c.Assert(childSpec.FieldType.Name, Equals, "Age")
+	c.Assert(childSpec.Length, Equals, 1)
+	c.Assert(childSpec.Repeat, Equals, 1)
+	spec = result[1]
+	c.Assert(spec.StructName, Equals, "*fixedfield.Transaction")
+	c.Assert(spec.FieldType.Name, Equals, "Seller")
+	c.Assert(spec.Length, Equals, 0)
 	c.Assert(spec.Repeat, Equals, 1)
+	c.Assert(len(spec.Children), Equals, 2)
+	childSpec = spec.Children[0]
+	c.Assert(childSpec.StructName, Equals, "fixedfield.Person")
+	c.Assert(childSpec.FieldType.Name, Equals, "Name")
+	childSpec = spec.Children[1]
+	c.Assert(childSpec.StructName, Equals, "fixedfield.Person")
+	c.Assert(childSpec.FieldType.Name, Equals, "Age")
 }
 
 // Test readBinaryInteger decodes an 8bit, Little Endian value.
@@ -866,3 +892,5 @@ func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
 	c.Assert(target.Enrolled, Equals, false)
 	c.Assert(target.ShouldBeEnrolled, Equals, true)
 }
+
+// Test that populateStructFromReadSpecAndBytes copes with nested structs
