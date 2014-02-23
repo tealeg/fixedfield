@@ -32,7 +32,7 @@ type Target struct {
 	Enrolled         bool
 	ShouldBeEnrolled bool `encoding:"ascii"`
 	Dispatched       bool `encoding:"ascii" trueChars:"jJ"`
-	Ratings          []int `length:"1" repeat:"10"`
+	Ratings          []int `length:"1" repeat:"10" encoding:"ascii"`
 }
 
 type Transaction struct {
@@ -108,7 +108,7 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	c.Assert(spec.FieldType.Name, Equals, "Ratings")
 	c.Assert(spec.Length, Equals, 1)
 	c.Assert(spec.Repeat, Equals, 10)
-	// TODO, pad out with what we really need for an array
+	c.Assert(spec.Encoding, Equals, "ascii")
 }
 
 // Test that buildReadSpecs copes with nested structures

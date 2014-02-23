@@ -98,6 +98,15 @@ func buildReadSpecsFromElems(value reflect.Value, structName string) (readSpecs 
 					}
 				}
 			}
+		case reflect.Slice:
+			if spec.Length == 0 {
+				spec.Length = 1
+			}
+			if len(encoding) == 0 {
+				spec.Encoding = "LE"
+			} else {
+				spec.Encoding = encoding
+			}
 		case reflect.Struct:
 			subStructName = spec.FieldValue.Type().String()
 			spec.Children, err = buildReadSpecsFromElems(
