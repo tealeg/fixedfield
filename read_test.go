@@ -25,18 +25,18 @@ type Target struct {
 	Pi               float64 `length:"8" encoding:"le"`
 	UpsideDownCake   float32 `length:"4" encoding:"be"`
 	Enrolled         bool
-	ShouldBeEnrolled bool `encoding:"ascii"`
-	Dispatched       bool `encoding:"ascii" trueChars:"jJ"`
+	ShouldBeEnrolled bool  `encoding:"ascii"`
+	Dispatched       bool  `encoding:"ascii" trueChars:"jJ"`
 	Ratings          []int `length:"1" repeat:"10" encoding:"ascii"`
 }
 
 type Person struct {
 	Name string `length:"5"`
-	Age int `length:"1"`
+	Age  int    `length:"1"`
 }
 
 type Transaction struct {
-	Buyer Person
+	Buyer  Person
 	Seller Person
 }
 
@@ -850,7 +850,7 @@ func (s *ReadSuite) TestReadBoolASCII(c *C) {
 		Length:     1,
 		Repeat:     1,
 		Encoding:   "ascii",
-		TrueBytes: []byte("\x4A\x6A")}
+		TrueBytes:  []byte("\x4A\x6A")}
 	block := []byte("\x40")
 	err := readBool(readspec, block, 1)
 	c.Assert(err, IsNil)

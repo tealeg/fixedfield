@@ -22,7 +22,7 @@ type readSpec struct {
 	Repeat     int
 	Encoding   string
 	TrueBytes  []byte
-	Children []readSpec
+	Children   []readSpec
 }
 
 func (spec *readSpec) String() string {
@@ -30,8 +30,7 @@ func (spec *readSpec) String() string {
 		spec.FieldType.Name, spec.FieldValue.Interface(), spec.Length, spec.Repeat)
 }
 
-
-func buildReadSpecsFromElems(value reflect.Value, structName string) (readSpecs []readSpec, err error){
+func buildReadSpecsFromElems(value reflect.Value, structName string) (readSpecs []readSpec, err error) {
 	var fieldCount int
 	var spec readSpec
 	var tag reflect.StructTag
@@ -365,7 +364,7 @@ func readBlock(data io.Reader, length int) (block []byte, bytesRead int, err err
 	if bytesRead != length {
 		return nil, 0, fmt.Errorf("Buffer underrun, %d of %d bytes read.", bytesRead, length)
 	}
-	
+
 	return block, bytesRead, err
 
 }
