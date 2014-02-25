@@ -15,11 +15,6 @@ type ReadSuite struct{}
 
 var _ = Suite(&ReadSuite{})
 
-type Person struct {
-	Name string `length:"5"`
-	Age int `length:"1"`
-}
-
 type Target struct {
 	Name             string  `length:"5"`
 	Age              int     `length:"2" encoding:"ascii"`
@@ -33,6 +28,11 @@ type Target struct {
 	ShouldBeEnrolled bool `encoding:"ascii"`
 	Dispatched       bool `encoding:"ascii" trueChars:"jJ"`
 	Ratings          []int `length:"1" repeat:"10" encoding:"ascii"`
+}
+
+type Person struct {
+	Name string `length:"5"`
+	Age int `length:"1"`
 }
 
 type Transaction struct {
@@ -875,6 +875,7 @@ func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
 			"\x40\x49\x0f\xdb" +
 			"\x00" +
 			"\x59" +
+			"J" +
 			"0123456789"))
 	target := &Target{}
 	readSpec, err := buildReadSpecs(target)
@@ -891,6 +892,9 @@ func (s *ReadSuite) TestPopulateStructFromReadSpecAndBytes(c *C) {
 	c.Assert(target.UpsideDownCake, Equals, float32(math.Pi))
 	c.Assert(target.Enrolled, Equals, false)
 	c.Assert(target.ShouldBeEnrolled, Equals, true)
+	for i := 0; i < 10; i++ {
+		c.Assert(target.Ratings[i], Equals, i)
+	}
 }
 
 // Test that populateStructFromReadSpecAndBytes copes with nested structs

@@ -102,10 +102,12 @@ func buildReadSpecsFromElems(value reflect.Value, structName string) (readSpecs 
 			if spec.Length == 0 {
 				spec.Length = 1
 			}
+			if spec.Repeat == 0 {
+				spec.Repeat = 1
+			}
+			spec.Encoding = encoding
 			if len(encoding) == 0 {
 				spec.Encoding = "LE"
-			} else {
-				spec.Encoding = encoding
 			}
 		case reflect.Struct:
 			subStructName = spec.FieldValue.Type().String()
@@ -338,32 +340,62 @@ func readBool(spec readSpec, block []byte, bytesRead int) (err error) {
 
 }
 
+func populateKind(kind reflect.Kind, block []byte, spec readSpec, bytesRead int, data io.Reader) (err error) {
+	switch kind {
+	case reflect.String:
+		spec.FieldValue.SetString(string(block))
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		err = readInteger(spec, block, bytesRead)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		err = readUnsignedInteger(spec, block, bytesRead)
+	case reflect.Float64, reflect.Float32:
+		err = readFloat(spec, block, bytesRead, kind)
+	case reflect.Bool:
+		err = readBool(spec, block, bytesRead)
+	case reflect.Struct:
+		// Recur, exploring the nested specification.
+		err = populateStructFromReadSpecAndBytes(spec.Children, data)
+	}
+	return err
+}
+
+func readBlock(data io.Reader, length int) (block []byte, bytesRead int, err error) {
+	block = make([]byte, length)
+	bytesRead, err = data.Read(block)
+	if bytesRead != length {
+		return nil, 0, fmt.Errorf("Buffer underrun, %d of %d bytes read.", bytesRead, length)
+	}
+	
+	return block, bytesRead, err
+
+}
+
 func populateStructFromReadSpecAndBytes(readSpecs []readSpec, data io.Reader) (err error) {
 	for _, spec := range readSpecs {
-		var bytesRead int
-		block := make([]byte, spec.Length)
-		bytesRead, err = data.Read(block)
-		if err != nil {
-			return err
-		}
-		if bytesRead != spec.Length {
-			return fmt.Errorf("Buffer underrun, %d of %d bytes read.", bytesRead, spec.Length)
-		}
 		kind := spec.FieldValue.Kind()
-		switch kind {
-		case reflect.String:
-			spec.FieldValue.SetString(string(block))
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			err = readInteger(spec, block, bytesRead)
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			err = readUnsignedInteger(spec, block, bytesRead)
-		case reflect.Float64, reflect.Float32:
-			err = readFloat(spec, block, bytesRead, kind)
-		case reflect.Bool:
-			err = readBool(spec, block, bytesRead)
-		case reflect.Struct:
-			// Recur, exploring the nested specification.
-			err = populateStructFromReadSpecAndBytes(spec.Children, data)
+		if kind == reflect.Slice {
+			sliceType := spec.FieldValue.Type()
+			elemKind := sliceType.Elem().Kind()
+			if !spec.FieldValue.CanSet() {
+				return fmt.Errorf("Cannot set slice, %s", spec.StructName)
+			}
+			spec.FieldValue.Set(
+				reflect.MakeSlice(sliceType, spec.Repeat, spec.Repeat))
+			sliceValue := spec.FieldValue
+			for offset := 0; offset < spec.Repeat; offset++ {
+				block, bytesRead, err := readBlock(data, spec.Length)
+				if err != nil {
+					return err
+				}
+				spec.FieldValue = sliceValue.Index(offset)
+				err = populateKind(elemKind, block, spec, bytesRead, data)
+			}
+		} else {
+			block, bytesRead, err := readBlock(data, spec.Length)
+			if err != nil {
+				return err
+			}
+			err = populateKind(kind, block, spec, bytesRead, data)
 		}
 
 		if err != nil {
