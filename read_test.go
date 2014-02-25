@@ -49,63 +49,63 @@ func (s *ReadSuite) TestBuildReadSpecs(c *C) {
 	c.Assert(result, HasLen, 12)
 	spec := result[0]
 	c.Assert(spec.StructName, Equals, "*fixedfield.Target")
-	c.Assert(spec.FieldType.Name, Equals, "Name")
+	c.Assert(spec.StructField.Name, Equals, "Name")
 	c.Assert(spec.Length, Equals, 5)
 	c.Assert(spec.Repeat, Equals, 1)
 	spec = result[1]
-	c.Assert(spec.FieldType.Name, Equals, "Age")
+	c.Assert(spec.StructField.Name, Equals, "Age")
 	c.Assert(spec.Length, Equals, 2)
 	c.Assert(spec.Repeat, Equals, 1)
 	c.Assert(spec.Encoding, Equals, "ascii")
 	spec = result[2]
-	c.Assert(spec.FieldType.Name, Equals, "ShoeSize")
+	c.Assert(spec.StructField.Name, Equals, "ShoeSize")
 	c.Assert(spec.Length, Equals, 2)
 	c.Assert(spec.Repeat, Equals, 1)
 	c.Assert(spec.Encoding, Equals, "bigendian")
 	spec = result[3]
-	c.Assert(spec.FieldType.Name, Equals, "CollarSize")
+	c.Assert(spec.StructField.Name, Equals, "CollarSize")
 	c.Assert(spec.Length, Equals, 2)
 	c.Assert(spec.Repeat, Equals, 1)
 	c.Assert(spec.Encoding, Equals, "le")
 	spec = result[4]
-	c.Assert(spec.FieldType.Name, Equals, "ElbowBreadth")
+	c.Assert(spec.StructField.Name, Equals, "ElbowBreadth")
 	c.Assert(spec.Length, Equals, 8)
 	c.Assert(spec.Repeat, Equals, 1)
 	c.Assert(spec.Encoding, Equals, "le")
 	spec = result[5]
-	c.Assert(spec.FieldType.Name, Equals, "NoseCapacity")
+	c.Assert(spec.StructField.Name, Equals, "NoseCapacity")
 	c.Assert(spec.Length, Equals, 6)
 	c.Assert(spec.Repeat, Equals, 1)
 	c.Assert(spec.Encoding, Equals, "ascii")
 	spec = result[6]
-	c.Assert(spec.FieldType.Name, Equals, "Pi")
+	c.Assert(spec.StructField.Name, Equals, "Pi")
 	c.Assert(spec.Length, Equals, 8)
 	c.Assert(spec.Repeat, Equals, 1)
 	c.Assert(spec.Encoding, Equals, "le")
 	spec = result[7]
-	c.Assert(spec.FieldType.Name, Equals, "UpsideDownCake")
+	c.Assert(spec.StructField.Name, Equals, "UpsideDownCake")
 	c.Assert(spec.Length, Equals, 4)
 	c.Assert(spec.Repeat, Equals, 1)
 	c.Assert(spec.Encoding, Equals, "be")
 	spec = result[8]
-	c.Assert(spec.FieldType.Name, Equals, "Enrolled")
+	c.Assert(spec.StructField.Name, Equals, "Enrolled")
 	c.Assert(spec.Length, Equals, 1)
 	c.Assert(spec.Repeat, Equals, 1)
 	c.Assert(spec.Encoding, Equals, "LE")
 	spec = result[9]
-	c.Assert(spec.FieldType.Name, Equals, "ShouldBeEnrolled")
+	c.Assert(spec.StructField.Name, Equals, "ShouldBeEnrolled")
 	c.Assert(spec.Length, Equals, 1)
 	c.Assert(spec.Repeat, Equals, 1)
 	c.Assert(spec.Encoding, Equals, "ascii")
 	c.Assert(string(spec.TrueBytes), Equals, "Yy")
 	spec = result[10]
-	c.Assert(spec.FieldType.Name, Equals, "Dispatched")
+	c.Assert(spec.StructField.Name, Equals, "Dispatched")
 	c.Assert(spec.Length, Equals, 1)
 	c.Assert(spec.Repeat, Equals, 1)
 	c.Assert(spec.Encoding, Equals, "ascii")
 	c.Assert(string(spec.TrueBytes), Equals, "jJ")
 	spec = result[11]
-	c.Assert(spec.FieldType.Name, Equals, "Ratings")
+	c.Assert(spec.StructField.Name, Equals, "Ratings")
 	c.Assert(spec.Length, Equals, 1)
 	c.Assert(spec.Repeat, Equals, 10)
 	c.Assert(spec.Encoding, Equals, "ascii")
@@ -119,32 +119,32 @@ func (s *ReadSuite) TestBuildReadSpecsWithNestedStructs(c *C) {
 	c.Assert(result, HasLen, 2)
 	spec := result[0]
 	c.Assert(spec.StructName, Equals, "*fixedfield.Transaction")
-	c.Assert(spec.FieldType.Name, Equals, "Buyer")
+	c.Assert(spec.StructField.Name, Equals, "Buyer")
 	c.Assert(spec.Length, Equals, 0)
 	c.Assert(spec.Repeat, Equals, 0)
 	c.Assert(len(spec.Children), Equals, 2)
 	childSpec := spec.Children[0]
 	c.Assert(childSpec.StructName, Equals, "fixedfield.Person")
-	c.Assert(childSpec.FieldType.Name, Equals, "Name")
+	c.Assert(childSpec.StructField.Name, Equals, "Name")
 	c.Assert(childSpec.Length, Equals, 5)
 	c.Assert(childSpec.Repeat, Equals, 1)
 	childSpec = spec.Children[1]
 	c.Assert(childSpec.StructName, Equals, "fixedfield.Person")
-	c.Assert(childSpec.FieldType.Name, Equals, "Age")
+	c.Assert(childSpec.StructField.Name, Equals, "Age")
 	c.Assert(childSpec.Length, Equals, 1)
 	c.Assert(childSpec.Repeat, Equals, 1)
 	spec = result[1]
 	c.Assert(spec.StructName, Equals, "*fixedfield.Transaction")
-	c.Assert(spec.FieldType.Name, Equals, "Seller")
+	c.Assert(spec.StructField.Name, Equals, "Seller")
 	c.Assert(spec.Length, Equals, 0)
 	c.Assert(spec.Repeat, Equals, 0)
 	c.Assert(len(spec.Children), Equals, 2)
 	childSpec = spec.Children[0]
 	c.Assert(childSpec.StructName, Equals, "fixedfield.Person")
-	c.Assert(childSpec.FieldType.Name, Equals, "Name")
+	c.Assert(childSpec.StructField.Name, Equals, "Name")
 	childSpec = spec.Children[1]
 	c.Assert(childSpec.StructName, Equals, "fixedfield.Person")
-	c.Assert(childSpec.FieldType.Name, Equals, "Age")
+	c.Assert(childSpec.StructField.Name, Equals, "Age")
 }
 
 // Test readBinaryInteger decodes an 8bit, Little Endian value.
@@ -414,8 +414,8 @@ func (s *ReadSuite) TestReadIntegerWithASCII(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     1,
 		Repeat:     1,
 		Encoding:   "ascii"}
@@ -436,8 +436,8 @@ func (s *ReadSuite) TestReadIntegerWithBigEndianBinary(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     2,
 		Repeat:     1,
 		Encoding:   "be"}
@@ -458,8 +458,8 @@ func (s *ReadSuite) TestReadIntegerWithLittleEndianBinary(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     2,
 		Repeat:     1,
 		Encoding:   "le"}
@@ -480,8 +480,8 @@ func (s *ReadSuite) TestReadIntegerWithIvalidEncoding(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     2,
 		Repeat:     1,
 		Encoding:   "Barney"}
@@ -501,8 +501,8 @@ func (s *ReadSuite) TestReadUnsignedIntegerWithASCII(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     1,
 		Repeat:     1,
 		Encoding:   "ascii"}
@@ -523,8 +523,8 @@ func (s *ReadSuite) TestReadUnsignedIntegerWithBigEndianBinary(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     2,
 		Repeat:     1,
 		Encoding:   "be"}
@@ -545,8 +545,8 @@ func (s *ReadSuite) TestReadUnsignedIntegerWithLittleEndianBinary(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     2,
 		Repeat:     1,
 		Encoding:   "le"}
@@ -567,8 +567,8 @@ func (s *ReadSuite) TestReadUnsignedIntegerWithIvalidEncoding(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     2,
 		Repeat:     1,
 		Encoding:   "Barney"}
@@ -609,8 +609,8 @@ func (s *ReadSuite) TestReadFloatASCII32Bit(c *C) {
 	fieldtype := values.Type().Field(0)
 	kind := value.Kind()
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     4,
 		Repeat:     1,
 		Encoding:   "ASCII"}
@@ -632,8 +632,8 @@ func (s *ReadSuite) TestReadFloatASCII32BitNegative(c *C) {
 	fieldtype := values.Type().Field(0)
 	kind := value.Kind()
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     5,
 		Repeat:     1,
 		Encoding:   "ASCII"}
@@ -655,8 +655,8 @@ func (s *ReadSuite) TestReadFloatASCII64Bit(c *C) {
 	fieldtype := values.Type().Field(0)
 	kind := value.Kind()
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     4,
 		Repeat:     1,
 		Encoding:   "ASCII"}
@@ -678,8 +678,8 @@ func (s *ReadSuite) TestReadFloatASCII64BitNegative(c *C) {
 	fieldtype := values.Type().Field(0)
 	kind := value.Kind()
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     5,
 		Repeat:     1,
 		Encoding:   "ASCII"}
@@ -701,8 +701,8 @@ func (s *ReadSuite) TestReadFloatBigEndian32Bit(c *C) {
 	fieldtype := values.Type().Field(0)
 	kind := value.Kind()
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     4,
 		Repeat:     1,
 		Encoding:   "be"}
@@ -724,8 +724,8 @@ func (s *ReadSuite) TestReadFloatBigEndian64Bit(c *C) {
 	fieldtype := values.Type().Field(0)
 	kind := value.Kind()
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     8,
 		Repeat:     1,
 		Encoding:   "be"}
@@ -747,8 +747,8 @@ func (s *ReadSuite) TestReadFloatLittleEndian32Bit(c *C) {
 	fieldtype := values.Type().Field(0)
 	kind := value.Kind()
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     4,
 		Repeat:     1,
 		Encoding:   "le"}
@@ -770,8 +770,8 @@ func (s *ReadSuite) TestReadFloatLittleEndian64Bit(c *C) {
 	fieldtype := values.Type().Field(0)
 	kind := value.Kind()
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     8,
 		Repeat:     1,
 		Encoding:   "le"}
@@ -792,8 +792,8 @@ func (s *ReadSuite) TestReadFloatInvalidEncoding(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     2,
 		Repeat:     1,
 		Encoding:   "Barney"}
@@ -814,8 +814,8 @@ func (s *ReadSuite) TestReadBoolByte(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     1,
 		Repeat:     1,
 		Encoding:   "le"}
@@ -845,8 +845,8 @@ func (s *ReadSuite) TestReadBoolASCII(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		FieldValue: value,
-		FieldType:  fieldtype,
+		Value: value,
+		StructField:  fieldtype,
 		Length:     1,
 		Repeat:     1,
 		Encoding:   "ascii",

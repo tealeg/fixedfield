@@ -15,99 +15,113 @@ import (
 // populateStructFromReadSpecAndByte to guide the unmarshalling of
 // byte data into the target struct.
 type readSpec struct {
-	StructName string
-	FieldValue reflect.Value
-	FieldType  reflect.StructField
-	Length     int
-	Repeat     int
-	Encoding   string
-	TrueBytes  []byte
-	Children   []readSpec
+	StructName  string
+	Value       reflect.Value
+	StructField reflect.StructField
+	Length      int
+	Repeat      int
+	Encoding    string
+	TrueBytes   []byte
+	Children    []readSpec
 }
 
+// Return a string representation of the readSpec
 func (spec *readSpec) String() string {
-	return fmt.Sprintf("Field Name: %s,\t Field Value: %v,\t Field Length: %d\n, repeat %d\n",
-		spec.FieldType.Name, spec.FieldValue.Interface(), spec.Length, spec.Repeat)
+	return fmt.Sprintf(
+		"Field Name: %s,\n"+
+			"Field Value: %v\n"+
+			"Field Length: %d\n"+
+			"Repeat %d\n"+
+			"Encoding %s\n"+
+			"TrueBytes %s\n"+
+			"Children %v\n",
+		spec.StructField.Name, spec.Value.Interface(), spec.Length, spec.Repeat,
+		spec.Encoding, string(spec.TrueBytes), spec.Children)
 }
 
-func buildReadSpecsFromElems(value reflect.Value, structName string) (readSpecs []readSpec, err error) {
+func getFieldLength(tag reflect.StructTag) (int, error) {
+	var tagLength string
+	tagLength = tag.Get("length")
+	if len(tagLength) == 0 {
+		return 1, nil
+	}
+	return strconv.Atoi(tagLength)
+}
+
+func getFieldRepeat(tag reflect.StructTag) (int, error) {
+	var repeat string
+
+	repeat = tag.Get("repeat")
+	if len(repeat) == 0 {
+		return 1, nil
+	}
+	return strconv.Atoi(repeat)
+}
+
+func getFieldEncoding(tag reflect.StructTag) string {
+	var encoding string
+
+	encoding = tag.Get("encoding")
+	if len(encoding) == 0 {
+		return "LE"
+	}
+	return encoding
+}
+
+func getFieldTrueBytes(tag reflect.StructTag) []byte {
+	var trueChars string
+
+	trueChars = tag.Get("trueChars")
+
+	if len(trueChars) == 0 {
+		return []byte("Yy")
+	}
+	return []byte(trueChars)
+}
+
+func buildReadSpecFromField(value reflect.Value, field reflect.StructField, structName string) (spec readSpec, err error) {
+	var tag reflect.StructTag
+
+	spec = readSpec{}
+	spec.StructName = structName
+	spec.Value = value
+	spec.StructField = field
+	tag = spec.StructField.Tag
+
+	spec.Length, err = getFieldLength(tag)
+	if err != nil {
+		return spec, err
+	}
+
+	spec.Repeat, err = getFieldRepeat(tag)
+	if err != nil {
+		return spec, err
+	}
+
+	spec.Encoding = getFieldEncoding(tag)
+	spec.TrueBytes = getFieldTrueBytes(tag)
+	return spec, err
+}
+
+func buildReadSpecsFromStructValue(value reflect.Value, structName string) (readSpecs []readSpec, err error) {
 	var fieldCount int
 	var spec readSpec
-	var tag reflect.StructTag
-	var length, repeat, encoding, trueChars string
 	var subStructName string
-	var totalByteLength int
 
-	totalByteLength = 0
 	fieldCount = value.NumField()
 	readSpecs = make([]readSpec, fieldCount)
 
 	for i := 0; i < fieldCount; i++ {
-		spec = readSpec{}
-		spec.StructName = structName
-		spec.FieldValue = value.Field(i)
-		spec.FieldType = value.Type().Field(i)
-		tag = spec.FieldType.Tag
-		length = tag.Get("length")
-		repeat = tag.Get("repeat")
-		encoding = tag.Get("encoding")
-		trueChars = tag.Get("trueChars")
-		if len(length) == 0 {
-			spec.Length = 1
-		} else {
-			spec.Length, err = strconv.Atoi(length)
-			if err != nil {
-				return nil, err
-			}
-			totalByteLength += spec.Length
+		spec, err = buildReadSpecFromField(value.Field(i), value.Type().Field(i), structName)
+		if err != nil {
+			return nil, err
 		}
-		if len(repeat) == 0 {
-			spec.Repeat = 1
-		} else {
-			spec.Repeat, err = strconv.Atoi(repeat)
-			if err != nil {
-				return nil, err
-			}
-		}
-		switch spec.FieldValue.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32,
-			reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16,
-			reflect.Uint32, reflect.Uint64:
-			if len(encoding) == 0 {
-				spec.Encoding = "LE"
-			} else {
-				spec.Encoding = encoding
-			}
-		case reflect.Float64, reflect.Float32:
-			if len(encoding) == 0 {
-				spec.Encoding = "LE"
-			} else {
-				spec.Encoding = encoding
-			}
-		case reflect.Bool:
-			if len(encoding) == 0 {
-				spec.Encoding = "LE"
-			} else {
-				spec.Encoding = encoding
-				if encoding == "ascii" {
-					if len(trueChars) == 0 {
-						spec.TrueBytes = []byte("Yy")
-					} else {
-						spec.TrueBytes = []byte(trueChars)
-					}
-				}
-			}
-		case reflect.Slice:
-			spec.Encoding = encoding
-			if len(encoding) == 0 {
-				spec.Encoding = "LE"
-			}
-		case reflect.Struct:
+		if spec.Value.Kind() == reflect.Struct {
 			spec.Length = 0
 			spec.Repeat = 0
-			subStructName = spec.FieldValue.Type().String()
-			spec.Children, err = buildReadSpecsFromElems(
-				spec.FieldValue, subStructName)
+			subStructName = spec.Value.Type().String()
+			spec.Children, err = buildReadSpecsFromStructValue(
+				spec.Value, subStructName)
 			if err != nil {
 				return nil, err
 			}
@@ -129,7 +143,7 @@ func buildReadSpecs(structure interface{}) (readSpecs []readSpec, err error) {
 	structName = structType.String()
 
 	value = structValue.Elem()
-	readSpecs, err = buildReadSpecsFromElems(value, structName)
+	readSpecs, err = buildReadSpecsFromStructValue(value, structName)
 	return readSpecs, nil
 }
 
@@ -210,10 +224,10 @@ func readASCIIInteger(block []byte) (value int64, err error) {
 }
 
 func makeUnmarshalIntegerError(spec readSpec) error {
-	reflectType := spec.FieldType.Type
+	reflectType := spec.StructField.Type
 	kind := reflectType.Kind()
 	typeName := kind.String()
-	name := spec.StructName + "." + spec.FieldType.Name
+	name := spec.StructName + "." + spec.StructField.Name
 	return fmt.Errorf("Failure unmarshalling %s field '%s'. Integer fields must be annotated with an encoding type of BigEndian, LittleEndian or ASCII", typeName, name)
 }
 
@@ -233,7 +247,7 @@ func readInteger(spec readSpec, block []byte) (err error) {
 		err = makeUnmarshalIntegerError(spec)
 	}
 	if err == nil {
-		spec.FieldValue.SetInt(value)
+		spec.Value.SetInt(value)
 		return nil
 	}
 	return err
@@ -259,7 +273,7 @@ func readUnsignedInteger(spec readSpec, block []byte) (err error) {
 		err = makeUnmarshalIntegerError(spec)
 	}
 	if err == nil {
-		spec.FieldValue.SetUint(value)
+		spec.Value.SetUint(value)
 		return nil
 	}
 	return err
@@ -306,7 +320,7 @@ func readFloat(spec readSpec, block []byte, kind reflect.Kind) (err error) {
 	}
 
 	if err == nil {
-		spec.FieldValue.SetFloat(f64Val)
+		spec.Value.SetFloat(f64Val)
 	}
 	return err
 }
@@ -319,7 +333,7 @@ func readBool(spec readSpec, block []byte) (err error) {
 	switch strings.ToLower(spec.Encoding) {
 	case "littleendian", "le", "bigendian", "be", "byte":
 		if spec.Length > 1 {
-			err = fmt.Errorf("Booleans can only be 1 byte long, %d bytes specified for %s", spec.Length, spec.FieldType.Name)
+			err = fmt.Errorf("Booleans can only be 1 byte long, %d bytes specified for %s", spec.Length, spec.StructField.Name)
 		}
 		boolVal = int(block[0]) != 0
 	case "ascii":
@@ -329,7 +343,7 @@ func readBool(spec readSpec, block []byte) (err error) {
 			spec.String())
 	}
 	if err == nil {
-		spec.FieldValue.SetBool(boolVal)
+		spec.Value.SetBool(boolVal)
 	}
 	return err
 
@@ -338,7 +352,7 @@ func readBool(spec readSpec, block []byte) (err error) {
 func populateKind(kind reflect.Kind, block []byte, spec readSpec, data io.Reader) (err error) {
 	switch kind {
 	case reflect.String:
-		spec.FieldValue.SetString(string(block))
+		spec.Value.SetString(string(block))
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		err = readInteger(spec, block)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -353,7 +367,6 @@ func populateKind(kind reflect.Kind, block []byte, spec readSpec, data io.Reader
 	}
 	return err
 }
-
 
 // Read an array of bytes of given lengdh from the provided data.
 func readBlock(data io.Reader, length int) (block []byte, err error) {
@@ -374,22 +387,22 @@ func populateStructFromReadSpecAndBytes(readSpecs []readSpec, data io.Reader) (e
 	var elemKind reflect.Kind
 
 	for _, spec := range readSpecs {
-		kind := spec.FieldValue.Kind()
+		kind := spec.Value.Kind()
 		if kind == reflect.Slice {
-			sliceType = spec.FieldValue.Type()
+			sliceType = spec.Value.Type()
 			elemKind = sliceType.Elem().Kind()
-			if !spec.FieldValue.CanSet() {
+			if !spec.Value.CanSet() {
 				return fmt.Errorf("Cannot set slice, %s", spec.StructName)
 			}
-			spec.FieldValue.Set(
+			spec.Value.Set(
 				reflect.MakeSlice(sliceType, spec.Repeat, spec.Repeat))
-			sliceValue := spec.FieldValue
+			sliceValue := spec.Value
 			for offset := 0; offset < spec.Repeat; offset++ {
 				block, err = readBlock(data, spec.Length)
 				if err != nil {
 					return err
 				}
-				spec.FieldValue = sliceValue.Index(offset)
+				spec.Value = sliceValue.Index(offset)
 				err = populateKind(elemKind, block, spec, data)
 			}
 		} else {
