@@ -422,3 +422,12 @@ func populateStructFromReadSpecAndBytes(readSpecs []readSpec, data io.Reader) (e
 	}
 	return nil
 }
+
+func Unmarshal(data []byte, v interface{}) (err error) {
+	readSpec, err := buildReadSpecs(v)
+	if err != nil {
+		return err
+	}
+	return populateStructFromReadSpecAndBytes(readSpec, bytes.NewBuffer(data))
+
+}

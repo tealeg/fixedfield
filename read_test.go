@@ -414,11 +414,11 @@ func (s *ReadSuite) TestReadIntegerWithASCII(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     1,
-		Repeat:     1,
-		Encoding:   "ascii"}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      1,
+		Repeat:      1,
+		Encoding:    "ascii"}
 	block := []byte("3")
 	err := readInteger(readspec, block)
 	c.Assert(err, IsNil)
@@ -436,11 +436,11 @@ func (s *ReadSuite) TestReadIntegerWithBigEndianBinary(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     2,
-		Repeat:     1,
-		Encoding:   "be"}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      2,
+		Repeat:      1,
+		Encoding:    "be"}
 	block := []byte("\xff\x00")
 	err := readInteger(readspec, block)
 	c.Assert(err, IsNil)
@@ -458,11 +458,11 @@ func (s *ReadSuite) TestReadIntegerWithLittleEndianBinary(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     2,
-		Repeat:     1,
-		Encoding:   "le"}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      2,
+		Repeat:      1,
+		Encoding:    "le"}
 	block := []byte("\xff\x00")
 	err := readInteger(readspec, block)
 	c.Assert(err, IsNil)
@@ -480,11 +480,11 @@ func (s *ReadSuite) TestReadIntegerWithIvalidEncoding(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     2,
-		Repeat:     1,
-		Encoding:   "Barney"}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      2,
+		Repeat:      1,
+		Encoding:    "Barney"}
 	block := []byte("\xff\x00")
 	err := readInteger(readspec, block)
 	c.Assert(err, ErrorMatches, "Failure unmarshalling int64 field.*")
@@ -501,11 +501,11 @@ func (s *ReadSuite) TestReadUnsignedIntegerWithASCII(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     1,
-		Repeat:     1,
-		Encoding:   "ascii"}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      1,
+		Repeat:      1,
+		Encoding:    "ascii"}
 	block := []byte("3")
 	err := readUnsignedInteger(readspec, block)
 	c.Assert(err, IsNil)
@@ -523,11 +523,11 @@ func (s *ReadSuite) TestReadUnsignedIntegerWithBigEndianBinary(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     2,
-		Repeat:     1,
-		Encoding:   "be"}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      2,
+		Repeat:      1,
+		Encoding:    "be"}
 	block := []byte("\xff\x00")
 	err := readUnsignedInteger(readspec, block)
 	c.Assert(err, IsNil)
@@ -545,11 +545,11 @@ func (s *ReadSuite) TestReadUnsignedIntegerWithLittleEndianBinary(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     2,
-		Repeat:     1,
-		Encoding:   "le"}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      2,
+		Repeat:      1,
+		Encoding:    "le"}
 	block := []byte("\xff\x00")
 	err := readUnsignedInteger(readspec, block)
 	c.Assert(err, IsNil)
@@ -567,11 +567,11 @@ func (s *ReadSuite) TestReadUnsignedIntegerWithIvalidEncoding(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     2,
-		Repeat:     1,
-		Encoding:   "Barney"}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      2,
+		Repeat:      1,
+		Encoding:    "Barney"}
 	block := []byte("\xff\x00")
 	err := readUnsignedInteger(readspec, block)
 	c.Assert(err, ErrorMatches, "Failure unmarshalling uint64 field.*")
@@ -609,11 +609,11 @@ func (s *ReadSuite) TestReadFloatASCII32Bit(c *C) {
 	fieldtype := values.Type().Field(0)
 	kind := value.Kind()
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     4,
-		Repeat:     1,
-		Encoding:   "ASCII"}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      4,
+		Repeat:      1,
+		Encoding:    "ASCII"}
 	block := []byte("3.24")
 	err := readFloat(readspec, block, kind)
 	c.Assert(err, IsNil)
@@ -632,11 +632,11 @@ func (s *ReadSuite) TestReadFloatASCII32BitNegative(c *C) {
 	fieldtype := values.Type().Field(0)
 	kind := value.Kind()
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     5,
-		Repeat:     1,
-		Encoding:   "ASCII"}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      5,
+		Repeat:      1,
+		Encoding:    "ASCII"}
 	block := []byte("-3.24")
 	err := readFloat(readspec, block, kind)
 	c.Assert(err, IsNil)
@@ -655,11 +655,11 @@ func (s *ReadSuite) TestReadFloatASCII64Bit(c *C) {
 	fieldtype := values.Type().Field(0)
 	kind := value.Kind()
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     4,
-		Repeat:     1,
-		Encoding:   "ASCII"}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      4,
+		Repeat:      1,
+		Encoding:    "ASCII"}
 	block := []byte("3.24")
 	err := readFloat(readspec, block, kind)
 	c.Assert(err, IsNil)
@@ -678,11 +678,11 @@ func (s *ReadSuite) TestReadFloatASCII64BitNegative(c *C) {
 	fieldtype := values.Type().Field(0)
 	kind := value.Kind()
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     5,
-		Repeat:     1,
-		Encoding:   "ASCII"}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      5,
+		Repeat:      1,
+		Encoding:    "ASCII"}
 	block := []byte("-3.24")
 	err := readFloat(readspec, block, kind)
 	c.Assert(err, IsNil)
@@ -701,11 +701,11 @@ func (s *ReadSuite) TestReadFloatBigEndian32Bit(c *C) {
 	fieldtype := values.Type().Field(0)
 	kind := value.Kind()
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     4,
-		Repeat:     1,
-		Encoding:   "be"}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      4,
+		Repeat:      1,
+		Encoding:    "be"}
 	block := []byte("\x40\x09\x21\xfb")
 	err := readFloat(readspec, block, kind)
 	c.Assert(err, IsNil)
@@ -724,11 +724,11 @@ func (s *ReadSuite) TestReadFloatBigEndian64Bit(c *C) {
 	fieldtype := values.Type().Field(0)
 	kind := value.Kind()
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     8,
-		Repeat:     1,
-		Encoding:   "be"}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      8,
+		Repeat:      1,
+		Encoding:    "be"}
 	block := []byte("\x40\x09\x21\xfb\x54\x44\x2d\x18")
 	err := readFloat(readspec, block, kind)
 	c.Assert(err, IsNil)
@@ -747,11 +747,11 @@ func (s *ReadSuite) TestReadFloatLittleEndian32Bit(c *C) {
 	fieldtype := values.Type().Field(0)
 	kind := value.Kind()
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     4,
-		Repeat:     1,
-		Encoding:   "le"}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      4,
+		Repeat:      1,
+		Encoding:    "le"}
 	block := []byte("\x40\x09\x21\xfb")
 	err := readFloat(readspec, block, kind)
 	c.Assert(err, IsNil)
@@ -770,11 +770,11 @@ func (s *ReadSuite) TestReadFloatLittleEndian64Bit(c *C) {
 	fieldtype := values.Type().Field(0)
 	kind := value.Kind()
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     8,
-		Repeat:     1,
-		Encoding:   "le"}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      8,
+		Repeat:      1,
+		Encoding:    "le"}
 	block := []byte("\x40\x09\x21\xfb\x54\x44\x2d\x18")
 	err := readFloat(readspec, block, kind)
 	c.Assert(err, IsNil)
@@ -792,11 +792,11 @@ func (s *ReadSuite) TestReadFloatInvalidEncoding(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     2,
-		Repeat:     1,
-		Encoding:   "Barney"}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      2,
+		Repeat:      1,
+		Encoding:    "Barney"}
 	block := []byte("\xff\x00")
 	err := readUnsignedInteger(readspec, block)
 	c.Assert(err, ErrorMatches, "Failure unmarshalling float64 field.*")
@@ -814,11 +814,11 @@ func (s *ReadSuite) TestReadBoolByte(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     1,
-		Repeat:     1,
-		Encoding:   "le"}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      1,
+		Repeat:      1,
+		Encoding:    "le"}
 	block := []byte("\x00")
 	err := readBool(readspec, block)
 	c.Assert(err, IsNil)
@@ -845,12 +845,12 @@ func (s *ReadSuite) TestReadBoolASCII(c *C) {
 	value := values.Field(0)
 	fieldtype := values.Type().Field(0)
 	readspec := readSpec{
-		Value: value,
-		StructField:  fieldtype,
-		Length:     1,
-		Repeat:     1,
-		Encoding:   "ascii",
-		TrueBytes:  []byte("\x4A\x6A")}
+		Value:       value,
+		StructField: fieldtype,
+		Length:      1,
+		Repeat:      1,
+		Encoding:    "ascii",
+		TrueBytes:   []byte("\x4A\x6A")}
 	block := []byte("\x40")
 	err := readBool(readspec, block)
 	c.Assert(err, IsNil)
@@ -913,4 +913,38 @@ func (s *ReadSuite) TestPopulateNestedStructFromReadSpecAndBytes(c *C) {
 	c.Assert(transaction.Buyer.Age, Equals, 37)
 	c.Assert(transaction.Seller.Name, Equals, "Elisa")
 	c.Assert(transaction.Seller.Age, Equals, 4)
+}
+
+// Unmarshal builds readSpecs and populates the target struct, from a
+// single public function that follows the form of
+// encoding.xml.Unmarshal and encoding.json.Unmarshal
+func (s *ReadSuite) TestUnmarshal(c *C) {
+	data := []byte("Geoff" +
+		"36" +
+		"\x00\x7f" +
+		"\x7f\x00" +
+		"\xff\xff\xff\xff\xff\xff\xff\xff" +
+		"001.23" +
+		"\x18\x2d\x44\x54\xfb\x21\x09\x40" +
+		"\x40\x49\x0f\xdb" +
+		"\x00" +
+		"\x59" +
+		"J" +
+		"0123456789")
+	target := &Target{}
+	err := Unmarshal(data, target)
+	c.Assert(err, IsNil)
+	c.Assert(target.Name, Equals, "Geoff")
+	c.Assert(target.Age, Equals, 36)
+	c.Assert(target.ShoeSize, Equals, 127)
+	c.Assert(target.CollarSize, Equals, 127)
+	c.Assert(target.ElbowBreadth, Equals, uint(18446744073709551615))
+	c.Assert(target.NoseCapacity, Equals, 1.23)
+	c.Assert(target.Pi, Equals, math.Pi)
+	c.Assert(target.UpsideDownCake, Equals, float32(math.Pi))
+	c.Assert(target.Enrolled, Equals, false)
+	c.Assert(target.ShouldBeEnrolled, Equals, true)
+	for i := 0; i < 10; i++ {
+		c.Assert(target.Ratings[i], Equals, i)
+	}
 }
