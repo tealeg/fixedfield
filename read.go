@@ -36,7 +36,9 @@ func buildReadSpecsFromElems(value reflect.Value, structName string) (readSpecs 
 	var tag reflect.StructTag
 	var length, repeat, encoding, trueChars string
 	var subStructName string
+	var totalByteLength int
 
+	totalByteLength = 0
 	fieldCount = value.NumField()
 	readSpecs = make([]readSpec, fieldCount)
 
@@ -51,12 +53,13 @@ func buildReadSpecsFromElems(value reflect.Value, structName string) (readSpecs 
 		encoding = tag.Get("encoding")
 		trueChars = tag.Get("trueChars")
 		if len(length) == 0 {
-			spec.Length = 0
+			spec.Length = 1
 		} else {
 			spec.Length, err = strconv.Atoi(length)
 			if err != nil {
 				return nil, err
 			}
+			totalByteLength += spec.Length
 		}
 		if len(repeat) == 0 {
 			spec.Repeat = 1
@@ -82,9 +85,6 @@ func buildReadSpecsFromElems(value reflect.Value, structName string) (readSpecs 
 				spec.Encoding = encoding
 			}
 		case reflect.Bool:
-			if spec.Length == 0 {
-				spec.Length = 1
-			}
 			if len(encoding) == 0 {
 				spec.Encoding = "LE"
 			} else {
@@ -98,17 +98,13 @@ func buildReadSpecsFromElems(value reflect.Value, structName string) (readSpecs 
 				}
 			}
 		case reflect.Slice:
-			if spec.Length == 0 {
-				spec.Length = 1
-			}
-			if spec.Repeat == 0 {
-				spec.Repeat = 1
-			}
 			spec.Encoding = encoding
 			if len(encoding) == 0 {
 				spec.Encoding = "LE"
 			}
 		case reflect.Struct:
+			spec.Length = 0
+			spec.Repeat = 0
 			subStructName = spec.FieldValue.Type().String()
 			spec.Children, err = buildReadSpecsFromElems(
 				spec.FieldValue, subStructName)
@@ -224,15 +220,15 @@ func makeUnmarshalIntegerError(spec readSpec) error {
 // Given a readSpec, a block of bytes, and a block length, populate
 // the field defined by the readSpec with a 64bit integer value
 // encoded in the block of bytes.
-func readInteger(spec readSpec, block []byte, blockLength int) (err error) {
+func readInteger(spec readSpec, block []byte) (err error) {
 	var value int64
 	switch strings.ToLower(spec.Encoding) {
 	case "ascii":
 		value, err = readASCIIInteger(block)
 	case "bigendian", "be":
-		value, err = readBinaryInteger(block, blockLength, binary.BigEndian)
+		value, err = readBinaryInteger(block, spec.Length, binary.BigEndian)
 	case "littleendian", "le":
-		value, err = readBinaryInteger(block, blockLength, binary.LittleEndian)
+		value, err = readBinaryInteger(block, spec.Length, binary.LittleEndian)
 	default:
 		err = makeUnmarshalIntegerError(spec)
 	}
@@ -246,7 +242,7 @@ func readInteger(spec readSpec, block []byte, blockLength int) (err error) {
 // Given a readSpec, a block of bytes, and a block length, populate
 // the field defined by the readSpec with a 64bit unsigned integer value
 // encoded in the block of bytes.
-func readUnsignedInteger(spec readSpec, block []byte, blockLength int) (err error) {
+func readUnsignedInteger(spec readSpec, block []byte) (err error) {
 	var intVal int
 	var value uint64
 	switch strings.ToLower(spec.Encoding) {
@@ -256,9 +252,9 @@ func readUnsignedInteger(spec readSpec, block []byte, blockLength int) (err erro
 			value = uint64(intVal)
 		}
 	case "bigendian", "be":
-		value, err = readBinaryUnsignedInteger(block, blockLength, binary.BigEndian)
+		value, err = readBinaryUnsignedInteger(block, spec.Length, binary.BigEndian)
 	case "littleendian", "le":
-		value, err = readBinaryUnsignedInteger(block, blockLength, binary.LittleEndian)
+		value, err = readBinaryUnsignedInteger(block, spec.Length, binary.LittleEndian)
 	default:
 		err = makeUnmarshalIntegerError(spec)
 	}
@@ -291,7 +287,7 @@ func readBinaryFloat(block []byte, blockLength int, byteOrder binary.ByteOrder) 
 
 // Read a 64bit float from a block of bytes using encoding
 // information from the readSpec.
-func readFloat(spec readSpec, block []byte, bytesRead int, kind reflect.Kind) (err error) {
+func readFloat(spec readSpec, block []byte, kind reflect.Kind) (err error) {
 	var f64Val float64
 	switch strings.ToLower(spec.Encoding) {
 	case "ascii":
@@ -301,9 +297,9 @@ func readFloat(spec readSpec, block []byte, bytesRead int, kind reflect.Kind) (e
 			f64Val, err = strconv.ParseFloat(string(block), 64)
 		}
 	case "bigendian", "be":
-		f64Val, err = readBinaryFloat(block, bytesRead, binary.BigEndian)
+		f64Val, err = readBinaryFloat(block, spec.Length, binary.BigEndian)
 	case "littleendian", "le":
-		f64Val, err = readBinaryFloat(block, bytesRead, binary.LittleEndian)
+		f64Val, err = readBinaryFloat(block, spec.Length, binary.LittleEndian)
 	default:
 		err = fmt.Errorf("Invalid encoding for a floating point value specified. %s",
 			spec.String())
@@ -317,12 +313,12 @@ func readFloat(spec readSpec, block []byte, bytesRead int, kind reflect.Kind) (e
 
 // Read a boolean from a block of bytes using encoding
 // information from the readSpec.
-func readBool(spec readSpec, block []byte, bytesRead int) (err error) {
+func readBool(spec readSpec, block []byte) (err error) {
 	var boolVal bool
 
 	switch strings.ToLower(spec.Encoding) {
 	case "littleendian", "le", "bigendian", "be", "byte":
-		if bytesRead > 1 {
+		if spec.Length > 1 {
 			err = fmt.Errorf("Booleans can only be 1 byte long, %d bytes specified for %s", spec.Length, spec.FieldType.Name)
 		}
 		boolVal = int(block[0]) != 0
@@ -339,18 +335,18 @@ func readBool(spec readSpec, block []byte, bytesRead int) (err error) {
 
 }
 
-func populateKind(kind reflect.Kind, block []byte, spec readSpec, bytesRead int, data io.Reader) (err error) {
+func populateKind(kind reflect.Kind, block []byte, spec readSpec, data io.Reader) (err error) {
 	switch kind {
 	case reflect.String:
 		spec.FieldValue.SetString(string(block))
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		err = readInteger(spec, block, bytesRead)
+		err = readInteger(spec, block)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		err = readUnsignedInteger(spec, block, bytesRead)
+		err = readUnsignedInteger(spec, block)
 	case reflect.Float64, reflect.Float32:
-		err = readFloat(spec, block, bytesRead, kind)
+		err = readFloat(spec, block, kind)
 	case reflect.Bool:
-		err = readBool(spec, block, bytesRead)
+		err = readBool(spec, block)
 	case reflect.Struct:
 		// Recur, exploring the nested specification.
 		err = populateStructFromReadSpecAndBytes(spec.Children, data)
@@ -358,23 +354,30 @@ func populateKind(kind reflect.Kind, block []byte, spec readSpec, bytesRead int,
 	return err
 }
 
-func readBlock(data io.Reader, length int) (block []byte, bytesRead int, err error) {
+
+// Read an array of bytes of given lengdh from the provided data.
+func readBlock(data io.Reader, length int) (block []byte, err error) {
+	var bytesRead int
 	block = make([]byte, length)
 	bytesRead, err = data.Read(block)
 	if bytesRead != length {
-		return nil, 0, fmt.Errorf("Buffer underrun, %d of %d bytes read.", bytesRead, length)
+		return nil, fmt.Errorf("Buffer underrun, %d of %d bytes read.", bytesRead, length)
 	}
-
-	return block, bytesRead, err
-
+	return block, err
 }
 
+// Given a slice of readSpecs and some data, populate the target
+// struct elements from the data.
 func populateStructFromReadSpecAndBytes(readSpecs []readSpec, data io.Reader) (err error) {
+	var block []byte
+	var sliceType reflect.Type
+	var elemKind reflect.Kind
+
 	for _, spec := range readSpecs {
 		kind := spec.FieldValue.Kind()
 		if kind == reflect.Slice {
-			sliceType := spec.FieldValue.Type()
-			elemKind := sliceType.Elem().Kind()
+			sliceType = spec.FieldValue.Type()
+			elemKind = sliceType.Elem().Kind()
 			if !spec.FieldValue.CanSet() {
 				return fmt.Errorf("Cannot set slice, %s", spec.StructName)
 			}
@@ -382,19 +385,19 @@ func populateStructFromReadSpecAndBytes(readSpecs []readSpec, data io.Reader) (e
 				reflect.MakeSlice(sliceType, spec.Repeat, spec.Repeat))
 			sliceValue := spec.FieldValue
 			for offset := 0; offset < spec.Repeat; offset++ {
-				block, bytesRead, err := readBlock(data, spec.Length)
+				block, err = readBlock(data, spec.Length)
 				if err != nil {
 					return err
 				}
 				spec.FieldValue = sliceValue.Index(offset)
-				err = populateKind(elemKind, block, spec, bytesRead, data)
+				err = populateKind(elemKind, block, spec, data)
 			}
 		} else {
-			block, bytesRead, err := readBlock(data, spec.Length)
+			block, err = readBlock(data, spec.Length)
 			if err != nil {
 				return err
 			}
-			err = populateKind(kind, block, spec, bytesRead, data)
+			err = populateKind(kind, block, spec, data)
 		}
 
 		if err != nil {
