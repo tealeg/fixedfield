@@ -17,6 +17,7 @@ type spec struct {
 	Length      int
 	Repeat      int
 	Encoding    string
+	Padding     string
 	TrueBytes   []byte
 	Children    []spec
 }
@@ -35,11 +36,19 @@ func (s *spec) String() string {
 		s.Encoding, string(s.TrueBytes), s.Children)
 }
 
-
 func (s *spec) Size() int {
 	return s.Length * s.Repeat
 }
 
+
+func getPadding(tag reflect.StructTag) string {
+	var padding string
+	padding = tag.Get("padding")
+	if len(padding) == 0 {
+		padding = "0"
+	}
+	return padding
+}
 
 func getFieldLength(tag reflect.StructTag) (int, error) {
 	var tagLength string
@@ -102,6 +111,7 @@ func buildSpecFromField(value reflect.Value, field reflect.StructField, structNa
 
 	s.Encoding = getFieldEncoding(tag)
 	s.TrueBytes = getFieldTrueBytes(tag)
+	s.Padding = getPadding(tag)
 	return s, err
 }
 

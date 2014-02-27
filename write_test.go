@@ -40,6 +40,22 @@ func (s *WriteSuite) TestMarshalIntegerASCIINegative(c *C) {
 }
 
 
+func (s *WriteSuite) TestMarshalIntegerASCIIPositivePad(c *C) {
+	type target struct {
+		Value int `encoding:"ascii", length:"10", pad:" "`
+	}
+	var t *target
+	var block []byte
+
+	t = &target{Value: 33}
+	specs, err := buildSpecs(t)
+	c.Assert(err, IsNil)
+	block, err = marshalInteger(specs[0])
+	c.Assert(err, IsNil)
+	c.Assert(string(block), Equals, "        33")
+}
+
+
 func (s *WriteSuite) TestPopulateBytesFromSpecAndStruct(c *C) {
 	var data []byte
 	var specs []spec
