@@ -1,6 +1,7 @@
 package fixedfield
 
 import (
+	"fmt"
 	. "launchpad.net/gocheck"
 	"math"
 )
@@ -10,13 +11,13 @@ type WriteSuite struct{}
 var _ = Suite(&WriteSuite{})
 
 func (s *WriteSuite) TestMarshalIntegerASCIIPositive(c *C) {
-	type target struct {
-		Value int `encoding:"ascii", length:"1"`
+	type target1 struct {
+		Value int `encoding:"ascii" length:"1"`
 	}
-	var t *target
+	var t *target1
 	var block []byte
 
-	t = &target{Value: 3}
+	t = &target1{Value: 3}
 	specs, err := buildSpecs(t)
 	c.Assert(err, IsNil)
 	block, err = marshalInteger(specs[0])
@@ -25,13 +26,13 @@ func (s *WriteSuite) TestMarshalIntegerASCIIPositive(c *C) {
 }
 
 func (s *WriteSuite) TestMarshalIntegerASCIINegative(c *C) {
-	type target struct {
-		Value int `encoding:"ascii", length:"2"`
+	type target2 struct {
+		Value int `encoding:"ascii" length:"2"`
 	}
-	var t *target
+	var t *target2
 	var block []byte
 
-	t = &target{Value: -3}
+	t = &target2{Value: -3}
 	specs, err := buildSpecs(t)
 	c.Assert(err, IsNil)
 	block, err = marshalInteger(specs[0])
@@ -41,14 +42,15 @@ func (s *WriteSuite) TestMarshalIntegerASCIINegative(c *C) {
 
 
 func (s *WriteSuite) TestMarshalIntegerASCIIPositivePad(c *C) {
-	type target struct {
-		Value int `encoding:"ascii", length:"10", pad:" "`
+	type target3 struct {
+		Value int `encoding:"ascii" length:"10"`
 	}
-	var t *target
+	var t *target3
 	var block []byte
 
-	t = &target{Value: 33}
+	t = &target3{Value: 33}
 	specs, err := buildSpecs(t)
+	fmt.Printf("Spec.length %d", specs[0].Length)
 	c.Assert(err, IsNil)
 	block, err = marshalInteger(specs[0])
 	c.Assert(err, IsNil)
@@ -107,5 +109,5 @@ func (s *WriteSuite) TestMarshal(c *C) {
 	data, err = Marshal(target)
 	c.Assert(err, IsNil)
 	c.Assert(string(data[0:5]), Equals, "Geoff")
-	c.Assert(string(data[5:7]), Equals, "36")
+	c.Assert(string(data[5:17]), Equals, "          36")
 }

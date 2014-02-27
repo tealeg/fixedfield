@@ -732,7 +732,7 @@ func (s *ReadSuite) TestReadBoolASCII(c *C) {
 func (s *ReadSuite) TestPopulateStructFromSpecAndBytes(c *C) {
 	data := bytes.NewBuffer(
 		[]byte("Geoff" +
-			"36" +
+			"          36" +
 			"\x00\x7f" +
 			"\x7f\x00" +
 			"\xff\xff\xff\xff\xff\xff\xff\xff" +
@@ -786,7 +786,7 @@ func (s *ReadSuite) TestPopulateNestedStructFromSpecAndBytes(c *C) {
 // encoding.xml.Unmarshal and encoding.json.Unmarshal
 func (s *ReadSuite) TestUnmarshal(c *C) {
 	data := []byte("Geoff" +
-		"36" +
+		"          36" +
 		"\x00\x7f" +
 		"\x7f\x00" +
 		"\xff\xff\xff\xff\xff\xff\xff\xff" +

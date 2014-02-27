@@ -10,7 +10,7 @@ func Test(t *testing.T) { TestingT(t) }
 
 type Target struct {
 	Name             string  `length:"5"`
-	Age              int     `length:"2" encoding:"ascii" padding:" "`
+	Age              int     `length:"12" encoding:"ascii" padding:" "`
 	ShoeSize         int     `length:"2" encoding:"bigendian"`
 	CollarSize       int     `length:"2" encoding:"le"`
 	ElbowBreadth     uint    `length:"8" encoding:"le"`

@@ -78,7 +78,7 @@ func readASCIIInteger(block []byte) (value int64, err error) {
 		blockString = blockString[1:]
 		multiple = -1
 	}
-	intVal, err = strconv.Atoi(blockString)
+	intVal, err = strconv.Atoi(strings.TrimSpace(blockString))
 	intVal = intVal * multiple
 	if err != nil {
 		return

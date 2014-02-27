@@ -24,7 +24,7 @@ func (s *SpecSuite) TestBuildReadSpecs(c *C) {
 	c.Assert(spec.Repeat, Equals, 1)
 	spec = result[1]
 	c.Assert(spec.StructField.Name, Equals, "Age")
-	c.Assert(spec.Length, Equals, 2)
+	c.Assert(spec.Length, Equals, 12)
 	c.Assert(spec.Repeat, Equals, 1)
 	c.Assert(spec.Encoding, Equals, "ascii")
 	c.Assert(spec.Padding, Equals, " ")

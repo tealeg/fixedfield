@@ -2,13 +2,15 @@ package fixedfield
 
 import (
 	"bytes"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 )
 
 func marshalASCIIInteger(s spec) (block []byte, err error) {
-	return []byte(strconv.Itoa(int(s.Value.Int()))), nil
+	formatString := "%" + strconv.Itoa(s.Length) + "d"
+	return []byte(fmt.Sprintf(formatString, int(s.Value.Int()))), nil
 }
 
 func marshalInteger(s spec) (block []byte, err error) {
