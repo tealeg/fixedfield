@@ -9,6 +9,36 @@ type WriteSuite struct{}
 
 var _ = Suite(&WriteSuite{})
 
+func (s *WriteSuite) TestMarshalIntegerASCIIPositive(c *C) {
+	type target struct {
+		Value int `encoding:"ascii", length:"1"`
+	}
+	var t *target
+	var block []byte
+
+	t = &target{Value: 3}
+	specs, err := buildSpecs(t)
+	c.Assert(err, IsNil)
+	block, err = marshalInteger(specs[0])
+	c.Assert(err, IsNil)
+	c.Assert(string(block), Equals, "3")
+}
+
+func (s *WriteSuite) TestMarshalIntegerASCIINegative(c *C) {
+	type target struct {
+		Value int `encoding:"ascii", length:"2"`
+	}
+	var t *target
+	var block []byte
+
+	t = &target{Value: -3}
+	specs, err := buildSpecs(t)
+	c.Assert(err, IsNil)
+	block, err = marshalInteger(specs[0])
+	c.Assert(err, IsNil)
+	c.Assert(string(block), Equals, "-3")
+}
+
 
 func (s *WriteSuite) TestPopulateBytesFromSpecAndStruct(c *C) {
 	var data []byte
@@ -61,4 +91,5 @@ func (s *WriteSuite) TestMarshal(c *C) {
 	data, err = Marshal(target)
 	c.Assert(err, IsNil)
 	c.Assert(string(data[0:5]), Equals, "Geoff")
+	c.Assert(string(data[5:7]), Equals, "36")
 }

@@ -3,12 +3,28 @@ package fixedfield
 import (
 	"bytes"
 	"reflect"
+	"strconv"
+	"strings"
 )
+
+func marshalASCIIInteger(s spec) (block []byte, err error) {
+	return []byte(strconv.Itoa(int(s.Value.Int()))), nil
+}
+
+func marshalInteger(s spec) (block []byte, err error) {
+	switch strings.ToLower(s.Encoding) {
+	case "ascii":
+		return marshalASCIIInteger(s)
+	}
+	return
+}
 
 func marshalKind(kind reflect.Kind, s spec) (block []byte, err error) {
 	switch kind {
 	case reflect.String:
 		block = []byte(s.Value.String())
+	case reflect.Int:
+		block, err = marshalInteger(s)
 	}
 	return block, err
 }
