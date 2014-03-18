@@ -50,11 +50,28 @@ func (s *WriteSuite) TestMarshalIntegerASCIIPositivePad(c *C) {
 
 	t = &target3{Value: 33}
 	specs, err := buildSpecs(t)
-	fmt.Printf("Spec.length %d", specs[0].Length)
+	fmt.Printf("Spec.length %d\n", specs[0].Length)
 	c.Assert(err, IsNil)
 	block, err = marshalInteger(specs[0])
 	c.Assert(err, IsNil)
 	c.Assert(string(block), Equals, "        33")
+}
+
+func (s *WriteSuite) TestMarshalIntegerASCIINegativePad(c *C) {
+	type target4 struct {
+		Value int `encoding:"ascii" length:"10"`
+	}
+
+	var t * target4
+	var block []byte
+
+	t = &target4{Value: -44}
+	specs, err := buildSpecs(t)
+	fmt.Printf("Specs.length %d\n", specs[0].Length)
+	c.Assert(err, IsNil)
+	block, err = marshalInteger(specs[0])
+	c.Assert(err, IsNil)
+	c.Assert(string(block), Equals, "       -44")
 }
 
 
