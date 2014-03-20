@@ -9,8 +9,15 @@ import (
 )
 
 func marshalASCIIInteger(s spec) (block []byte, err error) {
-	formatString := "%" + strconv.Itoa(s.Length) + "d"
-	return []byte(fmt.Sprintf(formatString, int(s.Value.Int()))), nil
+	var formatString, candidate string
+
+	formatString = "%" + strconv.Itoa(s.Length) + "d"
+	candidate = fmt.Sprintf(formatString, int(s.Value.Int()))
+	if len(candidate) > s.Length {
+		return nil, fmt.Errorf("Field %s.%s overflowed configured field length (Tried to write %s to a %d length ASCII field)",
+			s.StructName, s.StructField.Name, candidate, s.Length)
+	}
+	return []byte(candidate), nil
 }
 
 func marshalInteger(s spec) (block []byte, err error) {
